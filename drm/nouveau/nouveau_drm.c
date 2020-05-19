@@ -1197,6 +1197,7 @@ nouveau_drm_init(void)
 {
 	driver_pci = driver_stub;
 	driver_platform = driver_stub;
+	printk(KERN_ALERT "My nouveau!\n");
 
 	nouveau_display_options();
 
@@ -1227,7 +1228,7 @@ nouveau_drm_exit(void)
 {
 	if (!nouveau_modeset)
 		return;
-
+	printk(KERN_ALERT "Bye nouveau!\n");
 #ifdef CONFIG_PCI
 	pci_unregister_driver(&nouveau_drm_pci_driver);
 #endif
