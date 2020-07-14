@@ -21,7 +21,7 @@
  */
 #define nvkm_mem(p) container_of((p), struct nvkm_mem, memory)
 #include "mem.h"
-
+#include <core/subdev.h>
 #include <core/memory.h>
 
 #include <nvif/if000a.h>
@@ -145,6 +145,7 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 		  void *argv, u32 argc, struct nvkm_memory **pmemory)
 {
 	struct device *dev = mmu->subdev.device->dev;
+	struct nvkm_subdev *subdev = &mmu->subdev;
 	union {
 		struct nvif_mem_ram_vn vn;
 		struct nvif_mem_ram_v0 v0;
@@ -168,13 +169,17 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 	mem->target = target;
 	mem->mmu = mmu;
 	*pmemory = &mem->memory;
+	nvkm_debug(subdev, "func %s type %d page %d size 0x%llx\n", 
+			__func__, type, page, size);
 
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
 		if (args->v0.dma) {
 			nvkm_memory_ctor(&nvkm_mem_dma, &mem->memory);
 			mem->dma = args->v0.dma;
+			nvkm_debug(subdev, "dma addr 0x%llx\n", (u64)mem->dma);
 		} else {
 			nvkm_memory_ctor(&nvkm_mem_sgl, &mem->memory);
+			nvkm_debug(subdev, "sgl \n");
 			mem->sgl = args->v0.sgl;
 		}
 
@@ -200,7 +205,7 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 		gfp |= GFP_HIGHUSER;
 	else
 		gfp |= GFP_DMA32;
-
+	nvkm_debug(subdev, "allocate dma page\n");
 	for (mem->pages = 0; size; size--, mem->pages++) {
 		struct page *p = alloc_page(gfp);
 		if (!p)
@@ -225,12 +230,15 @@ nvkm_mem_new_type(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 		  void *argv, u32 argc, struct nvkm_memory **pmemory)
 {
 	struct nvkm_memory *memory = NULL;
+	struct nvkm_subdev *subdev = &mmu->subdev;
 	int ret;
 
 	if (mmu->type[type].type & NVKM_MEM_VRAM) {
+		nvkm_debug(subdev, "func %s type NVKM_MEM_VRAM\n", __func__);
 		ret = mmu->func->mem.vram(mmu, type, page, size,
 					  argv, argc, &memory);
 	} else {
+		nvkm_debug(subdev, "func %s type %x\n", __func__, mmu->type[type].type);
 		ret = nvkm_mem_new_host(mmu, type, page, size,
 					argv, argc, &memory);
 	}

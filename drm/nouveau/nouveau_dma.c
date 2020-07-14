@@ -52,6 +52,7 @@ static inline int
 READ_GET(struct nouveau_channel *chan, uint64_t *prev_get, int *timeout)
 {
 	uint64_t val;
+	printk(KERN_ALERT "%s\n", __func__);
 
 	val = nvif_rd32(&chan->user, chan->user_get);
         if (chan->user_get_hi)
@@ -88,6 +89,8 @@ nv50_dma_push(struct nouveau_channel *chan, struct nouveau_bo *bo,
 	struct nouveau_vma *vma;
 	int ip = (chan->dma.ib_put * 2) + chan->dma.ib_base;
 	u64 offset;
+	printk(KERN_WARNING "func %s chid %d delta 0x%x length 0x%x\n",
+		       	__func__, chan->chid, delta, length);
 
 	vma = nouveau_vma_find(bo, &cli->vmm);
 	BUG_ON(!vma);
@@ -105,6 +108,10 @@ nv50_dma_push(struct nouveau_channel *chan, struct nouveau_bo *bo,
 	nouveau_bo_rd32(pb, 0);
 
 	nvif_wr32(&chan->user, 0x8c, chan->dma.ib_put);
+	if(likely(chan->user.map.ptr)) {
+		printk(KERN_NOTICE "nvif_wr32 user.map.ptr %p +0x8c dma.ib_put 0x%x\n", 
+				chan->user.map.ptr, chan->dma.ib_put);
+	}
 	chan->dma.ib_free--;
 }
 
@@ -182,7 +189,16 @@ nouveau_dma_wait(struct nouveau_channel *chan, int slots, int size)
 {
 	uint64_t prev_get = 0;
 	int cnt = 0, get;
+	printk(KERN_WARNING "%s chid %d slots %d size 0x%x\n",
+	       	__func__, chan->chid, slots, size);
 
+	printk(KERN_NOTICE "chan: max 0x%x free 0x%x cur 0x%x"
+			" put 0x%x ib_base 0x%x ib_max 0x%x"
+		       " ib_free 0x%x ib_put 0x%x \n",
+		       chan->dma.max, chan->dma.free, chan->dma.cur,
+		       chan->dma.put, chan->dma.ib_base, chan->dma.ib_max,
+		       chan->dma.ib_free, chan->dma.ib_put);
+//	WARN_ON(1);
 	if (chan->dma.ib_max)
 		return nv50_dma_wait(chan, slots, size);
 

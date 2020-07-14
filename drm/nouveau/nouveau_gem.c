@@ -272,6 +272,8 @@ nouveau_gem_ioctl_new(struct drm_device *dev, void *data,
 	struct nouveau_bo *nvbo = NULL;
 	int ret = 0;
 
+	struct nouveau_drm *drm = nouveau_drm(dev);
+	NV_WARN(drm, "func %s size 0x%llx\n", __func__, req->info.size);
 	ret = nouveau_gem_new(cli, req->info.size, req->align,
 			      req->info.domain, req->info.tile_mode,
 			      req->info.tile_flags, &nvbo);
@@ -697,6 +699,12 @@ nouveau_gem_ioctl_pushbuf(struct drm_device *dev, void *data,
 
 	req->vram_available = drm->gem.vram_available;
 	req->gart_available = drm->gem.gart_available;
+	NV_WARN(drm, "func %s\n", __func__);
+	NV_INFO(drm, "req channel %d nr_buffers %d buffers 0x%llx nr_relocs %d nr_push %d"
+			" relocs 0x%llx push 0x%llx vram_ava %llx gart_ava %llx\n",
+			req->channel, req->nr_buffers, req->buffers, req->nr_relocs,
+			req->nr_push, req->relocs, req->push, req->vram_available,
+			req->gart_available);
 	if (unlikely(req->nr_push == 0))
 		goto out_next;
 
@@ -866,6 +874,8 @@ nouveau_gem_ioctl_cpu_prep(struct drm_device *dev, void *data,
 	bool write = !!(req->flags & NOUVEAU_GEM_CPU_PREP_WRITE);
 	long lret;
 	int ret;
+	struct nouveau_drm *drm = nouveau_drm(dev);
+	NV_WARN(drm, "func %s\n", __func__);
 
 	gem = drm_gem_object_lookup(file_priv, req->handle);
 	if (!gem)
@@ -894,6 +904,8 @@ nouveau_gem_ioctl_cpu_fini(struct drm_device *dev, void *data,
 	struct drm_nouveau_gem_cpu_fini *req = data;
 	struct drm_gem_object *gem;
 	struct nouveau_bo *nvbo;
+	struct nouveau_drm *drm = nouveau_drm(dev);
+	NV_WARN(drm, "func %s\n", __func__);
 
 	gem = drm_gem_object_lookup(file_priv, req->handle);
 	if (!gem)
@@ -913,6 +925,8 @@ nouveau_gem_ioctl_info(struct drm_device *dev, void *data,
 	struct drm_gem_object *gem;
 	int ret;
 
+	struct nouveau_drm *drm = nouveau_drm(dev);
+	NV_WARN(drm, "func %s\n", __func__);
 	gem = drm_gem_object_lookup(file_priv, req->handle);
 	if (!gem)
 		return -ENOENT;

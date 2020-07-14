@@ -294,6 +294,7 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 				  oclass, &chan->base);
 	if (ret)
 		return ret;
+	nvif_ioctl(&chan->base.object, "subdevs 0x%llx enginemask 0x%x\n", subdevs, engines);
 
 	*chid = chan->base.chid;
 
@@ -358,6 +359,7 @@ gk104_fifo_gpfifo_new(struct nvkm_fifo *base, const struct nvkm_oclass *oclass,
 	} *args = data;
 	struct gk104_fifo *fifo = gk104_fifo(base);
 	int ret = -ENOSYS;
+//	WARN_ON(1);
 
 	nvif_ioctl(parent, "create channel gpfifo size %d\n", size);
 	if (!(ret = nvif_unpack(ret, &data, &size, args->v0, 0, 0, false))) {

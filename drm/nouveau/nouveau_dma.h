@@ -90,6 +90,7 @@ RING_SPACE(struct nouveau_channel *chan, int size)
 {
 	int ret;
 
+	printk(KERN_WARNING "func %s data size 0x%x\n", __func__, size);
 	ret = nouveau_dma_wait(chan, 1, size);
 	if (ret)
 		return ret;
@@ -101,6 +102,7 @@ RING_SPACE(struct nouveau_channel *chan, int size)
 static inline void
 OUT_RING(struct nouveau_channel *chan, int data)
 {
+	printk(KERN_WARNING "func %s dma cur 0x%x data 0x%x\n", __func__, chan->dma.cur, data);
 	nouveau_bo_wr32(chan->push.buffer, chan->dma.cur++, data);
 }
 
@@ -146,6 +148,7 @@ BEGIN_IMC0(struct nouveau_channel *chan, int subc, int mthd, u16 data)
 static inline void
 FIRE_RING(struct nouveau_channel *chan)
 {
+	printk(KERN_WARNING "func %s\n", __func__);
 	if (chan->dma.cur == chan->dma.put)
 		return;
 	chan->accel_done = true;

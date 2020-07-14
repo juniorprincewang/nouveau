@@ -210,7 +210,9 @@ gk104_gr_init(struct gf100_gr *gr)
 	u8  tpcnr[GPC_MAX];
 	int gpc, tpc, rop;
 	int i;
-
+	struct nvkm_subdev *subdev = &gr->base.engine.subdev;
+	nvkm_debug(subdev, "func %s firmware %d\n", __func__, gr->firmware);
+//	WARN_ON(1);
 	gr->func->init_gpc_mmu(gr);
 
 	gf100_gr_mmio(gr, gr->func->mmio);

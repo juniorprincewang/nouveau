@@ -129,6 +129,7 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 	void *emap;
 	int ret;
 
+	nvkm_trace(subdev, "func %s: \n", __func__);
 	/* Attempt to allocate BAR2 address-space and map the object
 	 * into it.  The lock has to be dropped while doing this due
 	 * to the possibility of recursion for page table allocation.
@@ -176,6 +177,8 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 	if (!iobj->map) {
 		nvkm_warn(subdev, "PRAMIN ioremap failed\n");
 		nvkm_vmm_put(vmm, &iobj->bar);
+	} else {
+		nvkm_debug(subdev, "bar->addr %x iobj->map %p: \n", (u32)iobj->bar->addr, iobj->map);
 	}
 }
 
@@ -194,6 +197,7 @@ nv50_instobj_release(struct nvkm_memory *memory)
 	struct nv50_instmem *imem = iobj->imem;
 	struct nvkm_subdev *subdev = &imem->base.subdev;
 
+	nvkm_trace(subdev, "func %s: \n", __func__);
 	wmb();
 	nvkm_bar_flush(subdev->device->bar);
 
@@ -221,8 +225,9 @@ nv50_instobj_acquire(struct nvkm_memory *memory)
 	void __iomem *map = NULL;
 
 	/* Already mapped? */
-	if (refcount_inc_not_zero(&iobj->maps))
+	if (refcount_inc_not_zero(&iobj->maps)) {
 		return iobj->map;
+	}
 
 	/* Take the lock, and re-check that another thread hasn't
 	 * already mapped the object in the meantime.
@@ -232,12 +237,14 @@ nv50_instobj_acquire(struct nvkm_memory *memory)
 		mutex_unlock(&imem->subdev.mutex);
 		return iobj->map;
 	}
+//	nvkm_trace(&imem->subdev, "func %s: \n", __func__);
 
 	/* Attempt to get a direct CPU mapping of the object. */
 	if ((vmm = nvkm_bar_bar2_vmm(imem->subdev.device))) {
 		if (!iobj->map)
 			nv50_instobj_kmap(iobj, vmm);
 		map = iobj->map;
+		nvkm_trace(&imem->subdev, "func %s: iobj->map %p\n", __func__, iobj->map);
 	}
 
 	if (!refcount_inc_not_zero(&iobj->maps)) {
@@ -261,6 +268,7 @@ nv50_instobj_boot(struct nvkm_memory *memory, struct nvkm_vmm *vmm)
 {
 	struct nv50_instobj *iobj = nv50_instobj(memory);
 	struct nvkm_instmem *imem = &iobj->imem->base;
+	nvkm_trace(&imem->subdev, "func %s: \n", __func__);
 
 	/* Exclude bootstrapped objects (ie. the page tables for the
 	 * instmem BAR itself) from eviction.

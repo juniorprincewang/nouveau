@@ -23,6 +23,7 @@
 #include "nouveau_drv.h"
 #include "nouveau_bo.h"
 #include "nouveau_mem.h"
+#include "nouveau_ttm.h"
 
 void
 nouveau_vma_unmap(struct nouveau_vma *vma)
@@ -80,7 +81,9 @@ nouveau_vma_new(struct nouveau_bo *nvbo, struct nouveau_vmm *vmm,
 	struct nouveau_vma *vma;
 	struct nvif_vma tmp;
 	int ret;
+	struct nouveau_drm *drm = nouveau_bdev(nvbo->bo.bdev);
 
+	NV_WARN(drm, "func %s\n", __func__);
 	if ((vma = *pvma = nouveau_vma_find(nvbo, vmm))) {
 		vma->refs++;
 		return 0;
@@ -93,6 +96,8 @@ nouveau_vma_new(struct nouveau_bo *nvbo, struct nouveau_vmm *vmm,
 	vma->addr = ~0ULL;
 	vma->mem = NULL;
 	list_add_tail(&vma->head, &nvbo->vma_list);
+	NV_INFO(drm, "mem type %d mem page %d nvbo page %d\n", 
+			nvbo->bo.mem.mem_type, mem->mem.page, nvbo->page);
 
 	if (nvbo->bo.mem.mem_type != TTM_PL_SYSTEM &&
 	    mem->mem.page == nvbo->page) {

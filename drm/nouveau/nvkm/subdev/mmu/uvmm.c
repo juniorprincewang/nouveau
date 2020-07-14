@@ -56,6 +56,7 @@ nvkm_uvmm_mthd_unmap(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
 		addr = args->v0.addr;
+		VMM_DEBUG(vmm, "uvmm mthd unmap %016llx", addr);
 	} else
 		return ret;
 
@@ -103,6 +104,9 @@ nvkm_uvmm_mthd_map(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 		size = args->v0.size;
 		handle = args->v0.memory;
 		offset = args->v0.offset;
+		VMM_DEBUG(vmm, "uvmm mthd map addr %016llx size 0x%llx "
+				"handle memory 0x%llx offset 0x%llx\n", 
+				addr, size, handle, offset);
 	} else
 		return ret;
 
@@ -185,6 +189,7 @@ nvkm_uvmm_mthd_put(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
 		addr = args->v0.addr;
+		VMM_DEBUG(vmm, "uvmm mthd put %016llx", addr);
 	} else
 		return ret;
 
@@ -230,6 +235,9 @@ nvkm_uvmm_mthd_get(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 		page = args->v0.page;
 		align = args->v0.align;
 		size = args->v0.size;
+		VMM_DEBUG(vmm, "uvmm mthd get getref %d mapref %d sparse %d "
+				"page %d align %d size 0x%llx\n", 
+				getref, mapref, sparse, page, align, size);
 	} else
 		return ret;
 
@@ -251,6 +259,7 @@ nvkm_uvmm_mthd_page(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 	union {
 		struct nvif_vmm_page_v0 v0;
 	} *args = argv;
+	struct nvkm_vmm *vmm = uvmm->vmm;
 	const struct nvkm_vmm_page *page;
 	int ret = -ENOSYS;
 	u8 type, index, nr;
@@ -267,6 +276,10 @@ nvkm_uvmm_mthd_page(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 		args->v0.vram = !!(type & NVKM_VMM_PAGE_VRAM);
 		args->v0.host = !!(type & NVKM_VMM_PAGE_HOST);
 		args->v0.comp = !!(type & NVKM_VMM_PAGE_COMP);
+		VMM_DEBUG(vmm, "uvmm mthd page index %d shift %d "
+				"sparse %d vram %d host %d comp %d\n",
+			       index, args->v0.shift, args->v0.sparse, args->v0.vram,
+			       args->v0.host, args->v0.comp);
 	} else
 		return -ENOSYS;
 
@@ -317,9 +330,12 @@ nvkm_uvmm_new(const struct nvkm_oclass *oclass, void *argv, u32 argc,
 	int ret = -ENOSYS;
 	u64 addr, size;
 
+	nvif_debug(oclass->parent, "uvmm new\n");
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, more))) {
 		addr = args->v0.addr;
 		size = args->v0.size;
+		nvif_debug(oclass->parent, "uvmm new addr 0x%llx size 0x%llx\n",
+				addr, size);
 	} else
 		return ret;
 
@@ -348,5 +364,7 @@ nvkm_uvmm_new(const struct nvkm_oclass *oclass, void *argv, u32 argc,
 		args->v0.page_nr++;
 	args->v0.addr = uvmm->vmm->start;
 	args->v0.size = uvmm->vmm->limit;
+	nvif_debug(oclass->parent, "uvmm args page_nr %d addr 0x%llx size 0x%llx\n",
+			args->v0.page_nr, args->v0.addr, args->v0.size);
 	return 0;
 }

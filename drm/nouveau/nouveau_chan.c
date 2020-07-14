@@ -131,6 +131,7 @@ nouveau_channel_prep(struct nouveau_drm *drm, struct nvif_device *device,
 	chan->drm = drm;
 	atomic_set(&chan->killed, 0);
 
+	NV_INFO(drm, "allocate memory for dma push buffer\n"); 
 	/* allocate memory for dma push buffer */
 	target = TTM_PL_FLAG_TT | TTM_PL_FLAG_UNCACHED;
 	if (nouveau_vram_pushbuf)
@@ -156,6 +157,7 @@ nouveau_channel_prep(struct nouveau_drm *drm, struct nvif_device *device,
 	chan->push.addr = chan->push.buffer->bo.offset;
 
 	if (device->info.family >= NV_DEVICE_INFO_V0_TESLA) {
+		NV_INFO(drm, "create dma vmm object for dma push buffer\n"); 
 		ret = nouveau_vma_new(chan->push.buffer, &cli->vmm,
 				      &chan->push.vma);
 		if (ret) {
@@ -201,6 +203,7 @@ nouveau_channel_prep(struct nouveau_drm *drm, struct nvif_device *device,
 			args.limit = cli->vmm.vmm.limit - 1;
 		}
 	}
+	NV_INFO(drm, "allocate push ctxdma object\n"); 
 
 	ret = nvif_object_init(&device->object, 0, NV_DMA_FROM_MEMORY,
 			       &args, sizeof(args), &chan->push.ctxdma);
@@ -235,12 +238,14 @@ nouveau_channel_ind(struct nouveau_drm *drm, struct nvif_device *device,
 	u32 size;
 	int ret;
 
+	NV_INFO(drm, "allocate dma push buffer\n"); 
 	/* allocate dma push buffer */
 	ret = nouveau_channel_prep(drm, device, 0x12000, &chan);
 	*pchan = chan;
 	if (ret)
 		return ret;
 
+	NV_INFO(drm, "create channel object\n"); 
 	/* create channel object */
 	do {
 		if (oclass[0] >= KEPLER_CHANNEL_GPFIFO_A) {
@@ -269,9 +274,10 @@ nouveau_channel_ind(struct nouveau_drm *drm, struct nvif_device *device,
 		ret = nvif_object_init(&device->object, 0, *oclass++,
 				       &args, size, &chan->user);
 		if (ret == 0) {
-			if (chan->user.oclass >= KEPLER_CHANNEL_GPFIFO_A)
+			if (chan->user.oclass >= KEPLER_CHANNEL_GPFIFO_A) {
 				chan->chid = args.kepler.chid;
-			else
+				NV_INFO(drm, "channel for kepler id %d\n", chan->chid); 
+			} else
 			if (chan->user.oclass >= FERMI_CHANNEL_GPFIFO)
 				chan->chid = args.fermi.chid;
 			else
@@ -331,6 +337,7 @@ nouveau_channel_init(struct nouveau_channel *chan, u32 vram, u32 gart)
 	struct nv_dma_v0 args = {};
 	int ret, i;
 
+	NV_WARN(drm, "%s", __func__);
 	nvif_object_map(&chan->user, NULL, 0);
 
 	if (chan->user.oclass >= FERMI_CHANNEL_GPFIFO) {
@@ -414,6 +421,14 @@ nouveau_channel_init(struct nouveau_channel *chan, u32 vram, u32 gart)
 	chan->dma.cur = chan->dma.put;
 	chan->dma.free = chan->dma.max - chan->dma.cur;
 
+	NV_INFO(drm, "initialise dma tracking parameters\n");
+	NV_INFO(drm, "chan user_put %x user_get %x user_get_hi %x\n"
+			"dma ib_max %x ib_base %x ib_put %x ib_free %x\n"
+			"dma max %x cur %x put %x free %x\n",
+			chan->user_put, chan->user_get, chan->user_get_hi,
+			chan->dma.ib_max, chan->dma.ib_base, chan->dma.ib_put,
+		       	chan->dma.ib_free, chan->dma.max, chan->dma.cur,
+			chan->dma.put, chan->dma.free);
 	ret = RING_SPACE(chan, NOUVEAU_DMA_SKIPS);
 	if (ret)
 		return ret;
@@ -450,6 +465,9 @@ nouveau_channel_new(struct nouveau_drm *drm, struct nvif_device *device,
 	bool super;
 	int ret;
 
+//	WARN_ON(1);
+	NV_WARN(drm, "%s arg0 0x%x arg1 0x%x device chipset 0x%x\n", 
+			__func__, arg0, arg1, device->info.chipset);
 	/* hack until fencenv50 is fixed, and agp access relaxed */
 	super = cli->base.super;
 	cli->base.super = true;

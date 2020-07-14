@@ -198,6 +198,7 @@ nouveau_bo_new(struct nouveau_cli *cli, u64 size, int align,
 	size_t acc_size;
 	int type = ttm_bo_type_device;
 	int ret, i, pi = -1;
+	NV_WARN(drm, "func %s size %016llx flags %x\n", __func__, size, flags);
 
 	if (!size) {
 		NV_WARN(drm, "skipped size %016llx\n", size);
@@ -287,6 +288,7 @@ nouveau_bo_new(struct nouveau_cli *cli, u64 size, int align,
 			nvbo->kind = mmu->kind[nvbo->kind];
 		nvbo->comp = 0;
 	}
+	NV_INFO(drm, "page shift %d, pi %d\n", vmm->page[pi].shift, pi);
 	nvbo->page = vmm->page[pi].shift;
 
 	nouveau_bo_fixup_align(nvbo, flags, &align, &size);
@@ -306,6 +308,7 @@ nouveau_bo_new(struct nouveau_cli *cli, u64 size, int align,
 	}
 
 	*pnvbo = nvbo;
+	NV_WARN(drm, "func %s return\n", __func__);
 	return 0;
 }
 
@@ -382,6 +385,7 @@ nouveau_bo_pin(struct nouveau_bo *nvbo, uint32_t memtype, bool contig)
 	struct ttm_buffer_object *bo = &nvbo->bo;
 	bool force = false, evict = false;
 	int ret;
+	NV_WARN(drm, "func %s flags %x\n", __func__, memtype);
 
 	ret = ttm_bo_reserve(bo, false, false, NULL);
 	if (ret)
@@ -486,7 +490,9 @@ int
 nouveau_bo_map(struct nouveau_bo *nvbo)
 {
 	int ret;
+	struct nouveau_drm *drm = nouveau_bdev(nvbo->bo.bdev);
 
+	NV_WARN(drm, "func %s\n", __func__);
 	ret = ttm_bo_reserve(&nvbo->bo, false, false, NULL);
 	if (ret)
 		return ret;

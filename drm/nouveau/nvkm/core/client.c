@@ -239,6 +239,8 @@ nvkm_client_child_get(struct nvkm_object *object, int index,
 		      struct nvkm_oclass *oclass)
 {
 	const struct nvkm_sclass *sclass;
+	nvif_info(object, "func %s index %d\n", __func__, index);
+//	WARN_ON(1);
 
 	switch (index) {
 	case 0: sclass = &nvkm_uclient_sclass; break;

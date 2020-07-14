@@ -242,6 +242,8 @@ nvkm_mm_init(struct nvkm_mm *mm, u8 heap, u32 offset, u32 length, u32 block)
 	struct nvkm_mm_node *node, *prev;
 	u32 next;
 
+	pr_warning("func %s: heap %x offset %x length %x block %x\n",
+		       	__func__, heap, offset, length, block);
 	if (nvkm_mm_initialised(mm)) {
 		prev = list_last_entry(&mm->nodes, typeof(*node), nl_entry);
 		next = prev->offset + prev->length;

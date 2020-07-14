@@ -33,6 +33,7 @@ nvkm_ummu_sclass(struct nvkm_object *object, int index,
 		 struct nvkm_oclass *oclass)
 {
 	struct nvkm_mmu *mmu = nvkm_ummu(object)->mmu;
+	nvif_debug(object, "ummu sclass\n");
 
 	if (mmu->func->mem.user.oclass && oclass->client->super) {
 		if (index-- == 0) {
@@ -160,12 +161,17 @@ nvkm_ummu_new(struct nvkm_device *device, const struct nvkm_oclass *oclass,
 
 	if (mmu->func->kind)
 		mmu->func->kind(mmu, &kinds);
-
+//	WARN_ON(1);
+	nvdev_debug(device, "create ummu\n");
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
 		args->v0.dmabits = mmu->dma_bits;
 		args->v0.heap_nr = mmu->heap_nr;
 		args->v0.type_nr = mmu->type_nr;
 		args->v0.kind_nr = kinds;
+		nvdev_debug(device, "create ummu v%d dmabits %d "
+				"heap_nr %d type_nr %d kinds %d\n",
+				args->v0.version, args->v0.dmabits, args->v0.heap_nr,
+				args->v0.type_nr, args->v0.kind_nr);
 	} else
 		return ret;
 

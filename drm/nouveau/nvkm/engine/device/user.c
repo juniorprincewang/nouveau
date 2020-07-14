@@ -145,7 +145,7 @@ static int
 nvkm_udevice_mthd(struct nvkm_object *object, u32 mthd, void *data, u32 size)
 {
 	struct nvkm_udevice *udev = nvkm_udevice(object);
-	nvif_ioctl(object, "device mthd %08x\n", mthd);
+	nvif_ioctl(object, "func %s: device mthd %08x\n",__func__, mthd);
 	switch (mthd) {
 	case NV_DEVICE_V0_INFO:
 		return nvkm_udevice_info(udev, data, size);
@@ -178,6 +178,7 @@ nvkm_udevice_rd32(struct nvkm_object *object, u64 addr, u32 *data)
 {
 	struct nvkm_udevice *udev = nvkm_udevice(object);
 	*data = nvkm_rd32(udev->device, addr);
+	nvif_debug(object, "func %s:\n", __func__);
 	return 0;
 }
 
@@ -193,6 +194,7 @@ static int
 nvkm_udevice_wr16(struct nvkm_object *object, u64 addr, u16 data)
 {
 	struct nvkm_udevice *udev = nvkm_udevice(object);
+	nvif_debug(object, "func %s:\n", __func__);
 	nvkm_wr16(udev->device, addr, data);
 	return 0;
 }
@@ -201,6 +203,7 @@ static int
 nvkm_udevice_wr32(struct nvkm_object *object, u64 addr, u32 data)
 {
 	struct nvkm_udevice *udev = nvkm_udevice(object);
+	nvif_debug(object, "func %s:\n", __func__);
 	nvkm_wr32(udev->device, addr, data);
 	return 0;
 }
@@ -214,6 +217,7 @@ nvkm_udevice_map(struct nvkm_object *object, void *argv, u32 argc,
 	*type = NVKM_OBJECT_MAP_IO;
 	*addr = device->func->resource_addr(device, 0);
 	*size = device->func->resource_size(device, 0);
+	nvif_debug(object, "func %s:\n", __func__);
 	return 0;
 }
 
@@ -224,6 +228,7 @@ nvkm_udevice_fini(struct nvkm_object *object, bool suspend)
 	struct nvkm_device *device = udev->device;
 	int ret = 0;
 
+	nvif_debug(object, "func %s:\n", __func__);
 	mutex_lock(&device->mutex);
 	if (!--device->refcount) {
 		ret = nvkm_device_fini(device, suspend);
@@ -244,6 +249,7 @@ nvkm_udevice_init(struct nvkm_object *object)
 	struct nvkm_udevice *udev = nvkm_udevice(object);
 	struct nvkm_device *device = udev->device;
 	int ret = 0;
+	nvif_debug(object, "func %s:\n", __func__);
 
 	mutex_lock(&device->mutex);
 	if (!device->refcount++) {
@@ -282,6 +288,7 @@ nvkm_udevice_child_get(struct nvkm_object *object, int index,
 	const struct nvkm_device_oclass *sclass = NULL;
 	int i;
 
+	nvif_debug(object, "func %s index %d\n", __func__, index);
 	for (; i = __ffs64(mask), mask && !sclass; mask &= ~(1ULL << i)) {
 		if (!(engine = nvkm_device_engine(device, i)) ||
 		    !(engine->func->base.sclass))
@@ -289,6 +296,7 @@ nvkm_udevice_child_get(struct nvkm_object *object, int index,
 		oclass->engine = engine;
 
 		index -= engine->func->base.sclass(oclass, index, &sclass);
+//		nvif_debug(object, "i %d index %d sclass %d\n", i, index, sclass==NULL?0:1);
 	}
 
 	if (!sclass) {
@@ -302,6 +310,7 @@ nvkm_udevice_child_get(struct nvkm_object *object, int index,
 		default:
 			return -EINVAL;
 		}
+//		nvif_debug(object, "sclass oclass %x\n", sclass->base.oclass);
 		oclass->base = sclass->base;
 	}
 
@@ -346,6 +355,8 @@ nvkm_udevice_new(const struct nvkm_oclass *oclass, void *data, u32 size,
 	struct nvkm_udevice *udev;
 	int ret = -ENOSYS;
 
+	nvif_debug(parent, "func %s, client super %d\n", __func__, client->super);
+//	WARN_ON(1);
 	nvif_ioctl(parent, "create device size %d\n", size);
 	if (!(ret = nvif_unpack(ret, &data, &size, args->v0, 0, 0, false))) {
 		nvif_ioctl(parent, "create device v%d device %016llx\n",

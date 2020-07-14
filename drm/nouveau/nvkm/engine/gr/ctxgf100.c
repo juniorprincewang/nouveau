@@ -1279,6 +1279,7 @@ gf100_grctx_generate(struct gf100_gr *gr)
 	struct gf100_grctx info;
 	int ret, i;
 	u64 addr;
+	nvkm_debug(subdev, "%s \n", __func__);
 
 	/* Allocate memory to for a "channel", which we'll use to generate
 	 * the default context values.

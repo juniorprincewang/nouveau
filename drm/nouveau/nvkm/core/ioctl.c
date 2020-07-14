@@ -90,6 +90,7 @@ nvkm_ioctl_new(struct nvkm_client *client,
 	struct nvkm_oclass oclass;
 	int ret = -ENOSYS, i = 0;
 
+//	WARN_ON(1);
 	nvif_ioctl(parent, "new size %d\n", size);
 	if (!(ret = nvif_unpack(ret, &data, &size, args->v0, 0, 0, true))) {
 		nvif_ioctl(parent, "new vers %d handle %08x class %08x "
@@ -169,6 +170,7 @@ nvkm_ioctl_mthd(struct nvkm_client *client,
 		struct nvif_ioctl_mthd_v0 v0;
 	} *args = data;
 	int ret = -ENOSYS;
+//	WARN_ON(1);
 
 	nvif_ioctl(object, "mthd size %d\n", size);
 	if (!(ret = nvif_unpack(ret, &data, &size, args->v0, 0, 0, true))) {

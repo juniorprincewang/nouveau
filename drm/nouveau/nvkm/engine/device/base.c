@@ -2600,6 +2600,7 @@ nvkm_device_init(struct nvkm_device *device)
 
 	time = ktime_to_us(ktime_get()) - time;
 	nvdev_trace(device, "init completed in %lldus\n", time);
+//	BUG_ON(1);
 	return 0;
 
 fail_subdev:
@@ -2674,6 +2675,7 @@ nvkm_device_ctor(const struct nvkm_device_func *func,
 	list_add_tail(&device->head, &nv_devices);
 	device->debug = nvkm_dbgopt(device->dbgopt, "device");
 
+	nvdev_error(device, "debug level=%d\n", device->debug);
 	ret = nvkm_event_init(&nvkm_device_event_func, 1, 1, &device->event);
 	if (ret)
 		goto done;
@@ -2852,6 +2854,7 @@ nvkm_device_ctor(const struct nvkm_device_func *func,
 
 	if (mmio) {
 		device->pri = ioremap(mmio_base, mmio_size);
+		nvdev_debug(device, "map PRI %p\n", device->pri);
 		if (!device->pri) {
 			nvdev_error(device, "unable to map PRI\n");
 			ret = -ENOMEM;

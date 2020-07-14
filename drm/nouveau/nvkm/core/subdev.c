@@ -144,7 +144,7 @@ nvkm_subdev_init(struct nvkm_subdev *subdev)
 	s64 time;
 	int ret;
 
-	nvkm_trace(subdev, "init running...\n");
+	nvkm_trace(subdev, "subdev init running...\n");
 	time = ktime_to_us(ktime_get());
 
 	if (subdev->func->oneinit && !subdev->oneinit) {
@@ -163,6 +163,7 @@ nvkm_subdev_init(struct nvkm_subdev *subdev)
 	}
 
 	if (subdev->func->init) {
+		nvkm_trace(subdev, "init running...\n");
 		ret = subdev->func->init(subdev);
 		if (ret) {
 			nvkm_error(subdev, "init failed, %d\n", ret);
@@ -171,7 +172,7 @@ nvkm_subdev_init(struct nvkm_subdev *subdev)
 	}
 
 	time = ktime_to_us(ktime_get()) - time;
-	nvkm_trace(subdev, "init completed in %lldus\n", time);
+	nvkm_trace(subdev, "subdev init completed in %lldus\n", time);
 	return 0;
 }
 
@@ -205,4 +206,5 @@ nvkm_subdev_ctor(const struct nvkm_subdev_func *func,
 
 	__mutex_init(&subdev->mutex, name, &nvkm_subdev_lock_class[index]);
 	subdev->debug = nvkm_dbgopt(device->dbgopt, name);
+	nvkm_warn(subdev, "subdev index %d name %s debug %d\n", index, name, subdev->debug);
 }

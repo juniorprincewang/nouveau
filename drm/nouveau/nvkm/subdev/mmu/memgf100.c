@@ -21,6 +21,7 @@
  */
 #include "mem.h"
 
+#include <core/subdev.h>
 #include <core/memory.h>
 #include <subdev/bar.h>
 #include <subdev/fb.h>
@@ -42,6 +43,8 @@ gf100_mem_map(struct nvkm_mmu *mmu, struct nvkm_memory *memory, void *argv,
 	struct nvkm_device *device = mmu->subdev.device;
 	struct nvkm_vmm *bar = nvkm_bar_bar1_vmm(device);
 	int ret = -ENOSYS;
+	struct nvkm_subdev *subdev = &mmu->subdev;
+	nvkm_debug(subdev, "func %s\n", __func__);
 
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
 		uvmm.ro   = args->v0.ro;
@@ -75,6 +78,8 @@ gf100_mem_new(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 	} *args = argv;
 	int ret = -ENOSYS;
 	bool contig;
+	struct nvkm_subdev *subdev = &mmu->subdev;
+	nvkm_debug(subdev, "func %s\n", __func__);
 
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
 		contig = args->v0.contig;

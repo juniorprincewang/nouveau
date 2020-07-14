@@ -179,6 +179,7 @@ nouveau_abi16_ioctl_getparam(ABI16_IOCTL_ARGS)
 	struct nvif_device *device = &drm->client.device;
 	struct nvkm_gr *gr = nvxx_gr(device);
 	struct drm_nouveau_getparam *getparam = data;
+	NV_WARN(drm, "func %s param %lld\n", __func__, getparam->param);
 
 	switch (getparam->param) {
 	case NOUVEAU_GETPARAM_CHIPSET_ID:
@@ -265,6 +266,7 @@ nouveau_abi16_ioctl_channel_alloc(ABI16_IOCTL_ARGS)
 		return nouveau_abi16_put(abi16, -ENODEV);
 
 	device = &abi16->device;
+	NV_WARN(drm, "func %s \n", __func__);
 
 	/* hack to allow channel engine type specification on kepler */
 	if (device->info.family >= NV_DEVICE_INFO_V0_KEPLER) {
@@ -305,7 +307,7 @@ nouveau_abi16_ioctl_channel_alloc(ABI16_IOCTL_ARGS)
 				  init->tt_ctxdma_handle, &chan->chan);
 	if (ret)
 		goto done;
-
+	NV_INFO(drm, "after channel creation : chan id %d\n", chan->chan->chid);
 	init->channel = chan->chan->chid;
 
 	if (device->info.family >= NV_DEVICE_INFO_V0_TESLA)
@@ -405,6 +407,7 @@ nouveau_abi16_usif(struct drm_file *file_priv, void *data, u32 size)
 int
 nouveau_abi16_ioctl_channel_free(ABI16_IOCTL_ARGS)
 {
+	struct nouveau_drm *drm = nouveau_drm(dev);
 	struct drm_nouveau_channel_free *req = data;
 	struct nouveau_abi16 *abi16 = nouveau_abi16_get(file_priv);
 	struct nouveau_abi16_chan *chan;
@@ -412,6 +415,7 @@ nouveau_abi16_ioctl_channel_free(ABI16_IOCTL_ARGS)
 	if (unlikely(!abi16))
 		return -ENOMEM;
 
+	NV_WARN(drm, "func %s\n", __func__);
 	chan = nouveau_abi16_chan(abi16, req->channel);
 	if (!chan)
 		return nouveau_abi16_put(abi16, -ENOENT);
@@ -423,6 +427,7 @@ int
 nouveau_abi16_ioctl_grobj_alloc(ABI16_IOCTL_ARGS)
 {
 	struct drm_nouveau_grobj_alloc *init = data;
+	struct nouveau_drm *drm = nouveau_drm(dev);
 	struct nouveau_abi16 *abi16 = nouveau_abi16_get(file_priv);
 	struct nouveau_abi16_chan *chan;
 	struct nouveau_abi16_ntfy *ntfy;
@@ -437,7 +442,7 @@ nouveau_abi16_ioctl_grobj_alloc(ABI16_IOCTL_ARGS)
 	if (init->handle == ~0)
 		return nouveau_abi16_put(abi16, -EINVAL);
 	client = abi16->device.object.client;
-
+	NV_WARN(drm, "func %s, chan id %d\n", __func__, init->channel);
 	chan = nouveau_abi16_chan(abi16, init->channel);
 	if (!chan)
 		return nouveau_abi16_put(abi16, -ENOENT);
@@ -526,6 +531,7 @@ nouveau_abi16_ioctl_notifierobj_alloc(ABI16_IOCTL_ARGS)
 
 	if (unlikely(!abi16))
 		return -ENOMEM;
+	NV_WARN(drm, "func %s\n", __func__);
 
 	/* completely unnecessary for these chipsets... */
 	if (unlikely(device->info.family >= NV_DEVICE_INFO_V0_FERMI))
@@ -589,12 +595,14 @@ nouveau_abi16_ioctl_gpuobj_free(ABI16_IOCTL_ARGS)
 {
 	struct drm_nouveau_gpuobj_free *fini = data;
 	struct nouveau_abi16 *abi16 = nouveau_abi16_get(file_priv);
+	struct nouveau_drm *drm = nouveau_drm(dev);
 	struct nouveau_abi16_chan *chan;
 	struct nouveau_abi16_ntfy *ntfy;
 	int ret = -ENOENT;
 
 	if (unlikely(!abi16))
 		return -ENOMEM;
+	NV_WARN(drm, "func %s chan id %d\n", __func__, fini->channel);
 
 	chan = nouveau_abi16_chan(abi16, fini->channel);
 	if (!chan)

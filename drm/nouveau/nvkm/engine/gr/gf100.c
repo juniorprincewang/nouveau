@@ -276,8 +276,11 @@ gf100_gr_object_new(const struct nvkm_oclass *oclass, void *data, u32 size,
 		    struct nvkm_object **pobject)
 {
 	struct gf100_gr_chan *chan = gf100_gr_chan(oclass->parent);
+	struct nvkm_subdev *subdev = &chan->gr->base.engine.subdev;
 	struct gf100_gr_object *object;
 
+	nvkm_trace(subdev, "func %s oclass %x oclass->base.func %d\n",
+			__func__, oclass->base.oclass, oclass->base.func?1:0);
 	if (!(object = kzalloc(sizeof(*object), GFP_KERNEL)))
 		return -ENOMEM;
 	*pobject = &object->object;

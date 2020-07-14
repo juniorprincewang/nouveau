@@ -257,7 +257,6 @@ nouveau_cli_init(struct nouveau_drm *drm, const char *sname,
 		NV_ERROR(drm, "No supported VMM class\n");
 		goto done;
 	}
-
 	ret = nouveau_vmm_init(cli, vmms[ret].oclass, &cli->vmm);
 	if (ret) {
 		NV_ERROR(drm, "VMM allocation failed: %d\n", ret);
@@ -306,6 +305,7 @@ nouveau_accel_init(struct nouveau_drm *drm)
 
 	if (nouveau_noaccel)
 		return;
+	NV_WARN(drm, "func %s\n", __func__);
 
 	/* initialise synchronisation routines */
 	/*XXX: this is crap, but the fence/channel stuff is a little
@@ -314,8 +314,10 @@ nouveau_accel_init(struct nouveau_drm *drm)
 	ret = n = nvif_object_sclass_get(&device->object, &sclass);
 	if (ret < 0)
 		return;
+	NV_INFO(drm, "sclass num %d\n", ret);
 
 	for (ret = -ENOSYS, i = 0; i < n; i++) {
+		NV_INFO(drm, "sclass[%d].oclass 0x%x\n", i, sclass[i].oclass);
 		switch (sclass[i].oclass) {
 		case NV03_CHANNEL_DMA:
 			ret = nv04_fence_create(drm);
@@ -359,6 +361,7 @@ nouveau_accel_init(struct nouveau_drm *drm)
 					  0, &drm->cechan);
 		if (ret)
 			NV_ERROR(drm, "failed to create ce channel, %d\n", ret);
+		NV_INFO(drm, "Succeed to create ce channel, %d\n", ret);
 
 		arg0 = NVA06F_V0_ENGINE_GR;
 		arg1 = 1;
@@ -380,6 +383,7 @@ nouveau_accel_init(struct nouveau_drm *drm)
 
 	ret = nouveau_channel_new(drm, &drm->client.device,
 				  arg0, arg1, &drm->channel);
+	NV_INFO(drm, "succeed to create kernel channel, %d\n", ret);
 	if (ret) {
 		NV_ERROR(drm, "failed to create kernel channel, %d\n", ret);
 		nouveau_accel_fini(drm);
@@ -417,8 +421,10 @@ nouveau_accel_init(struct nouveau_drm *drm)
 		nouveau_accel_fini(drm);
 		return;
 	}
+	NV_INFO(drm, "Succeed to allocate software object, %d\n", ret);
 
 	if (device->info.family < NV_DEVICE_INFO_V0_FERMI) {
+		NV_INFO(drm, "fermi\n");
 		ret = nvkm_gpuobj_new(nvxx_device(&drm->client.device), 32, 0,
 				      false, NULL, &drm->notify);
 		if (ret) {
@@ -940,6 +946,7 @@ nouveau_drm_open(struct drm_device *dev, struct drm_file *fpriv)
 	struct nouveau_cli *cli;
 	char name[32], tmpname[TASK_COMM_LEN];
 	int ret;
+	NV_FATAL(drm, "drm open %s\n", name);
 
 	/* need to bring up power immediately if opening device */
 	ret = pm_runtime_get_sync(dev->dev);
@@ -981,6 +988,8 @@ nouveau_drm_postclose(struct drm_device *dev, struct drm_file *fpriv)
 	struct nouveau_cli *cli = nouveau_cli(fpriv);
 	struct nouveau_drm *drm = nouveau_drm(dev);
 
+
+	NV_FATAL(drm, "drm close %s\n", drm->client.name);
 	pm_runtime_get_sync(dev->dev);
 
 	mutex_lock(&cli->mutex);
@@ -992,6 +1001,7 @@ nouveau_drm_postclose(struct drm_device *dev, struct drm_file *fpriv)
 	list_del(&cli->head);
 	mutex_unlock(&drm->client.mutex);
 
+	NV_INFO(drm, "nouveau cli fini name %s\n", cli->name? cli->name: "NULL");
 	nouveau_cli_fini(cli);
 	kfree(cli);
 	pm_runtime_mark_last_busy(dev->dev);

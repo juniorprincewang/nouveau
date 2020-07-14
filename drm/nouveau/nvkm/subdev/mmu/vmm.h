@@ -247,6 +247,7 @@ int gp10b_vmm_new(struct nvkm_mmu *, u64, u64, void *, u32,
 #define VMM_DEBUG(v,f,a...) VMM_PRINT(NV_DBG_DEBUG, (v), info, f, ##a)
 #define VMM_TRACE(v,f,a...) VMM_PRINT(NV_DBG_TRACE, (v), info, f, ##a)
 #define VMM_SPAM(v,f,a...)  VMM_PRINT(NV_DBG_SPAM , (v),  dbg, f, ##a)
+//#define VMM_SPAM(v,f,a...)  VMM_PRINT(NV_DBG_TRACE , (v),  info, f, ##a)
 
 #define VMM_MAP_ITER(VMM,PT,PTEI,PTEN,MAP,FILL,BASE,SIZE,NEXT) do {            \
 	nvkm_kmap((PT)->memory);                                               \

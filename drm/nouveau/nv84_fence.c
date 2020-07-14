@@ -113,6 +113,7 @@ nv84_fence_context_new(struct nouveau_channel *chan)
 	struct nv84_fence_priv *priv = chan->drm->fence;
 	struct nv84_fence_chan *fctx;
 	int ret;
+	NV_WARN(chan->drm, "func %s\n", __func__);
 
 	fctx = chan->fence = kzalloc(sizeof(*fctx), GFP_KERNEL);
 	if (!fctx)
