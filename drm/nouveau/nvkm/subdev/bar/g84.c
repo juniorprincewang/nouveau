@@ -24,13 +24,16 @@
 #include "nv50.h"
 
 #include <subdev/timer.h>
+#include <core/subdev.h>
 
 void
 g84_bar_flush(struct nvkm_bar *bar)
 {
 	struct nvkm_device *device = bar->subdev.device;
 	unsigned long flags;
+    nvkm_trace(&device->bar->subdev, "func %s", __func__);
 	spin_lock_irqsave(&bar->lock, flags);
+    // PFIFO_FLUSH.FLUSH_CTRL => { TRIGGER}
 	nvkm_wr32(device, 0x070000, 0x00000001);
 	nvkm_msec(device, 2000,
 		if (!(nvkm_rd32(device, 0x070000) & 0x00000002))

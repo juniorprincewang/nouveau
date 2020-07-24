@@ -22,6 +22,8 @@
  * Authors: Ben Skeggs
  */
 #include "gf100.h"
+#include <core/device.h>
+#include <core/subdev.h>
 
 #include <core/memory.h>
 #include <core/option.h>
@@ -60,6 +62,10 @@ gf100_bar_bar1_init(struct nvkm_bar *base)
 struct nvkm_vmm *
 gf100_bar_bar2_vmm(struct nvkm_bar *base)
 {
+    nvkm_trace(&base->subdev, "func %s: name %s start %#llx",
+               __func__,
+               gf100_bar(base)->bar[0].vmm->name,
+               gf100_bar(base)->bar[0].vmm->start);
 	return gf100_bar(base)->bar[0].vmm;
 }
 
@@ -77,6 +83,8 @@ gf100_bar_bar2_init(struct nvkm_bar *base)
 	u32 addr = nvkm_memory_addr(bar->bar[0].inst) >> 12;
 	if (bar->bar2_halve)
 		addr |= 0x40000000;
+    nvdev_trace(device, "func %s\n", __func__);
+    nvkm_trace(&device->bar->subdev, "addr %#x \n", addr);
 	nvkm_wr32(device, 0x001714, 0x80000000 | addr);
 }
 

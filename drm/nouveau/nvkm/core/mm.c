@@ -116,6 +116,8 @@ nvkm_mm_head(struct nvkm_mm *mm, u8 heap, u8 type, u32 size_max, u32 size_min,
 	u32 splitoff;
 	u32 s, e;
 
+    pr_warning("func %s, heap %#x type %#x size_max %#x align %#x\n",
+               __func__, heap, type, size_max, align);
 	BUG_ON(type == NVKM_MM_TYPE_NONE || type == NVKM_MM_TYPE_HOLE);
 
 	list_for_each_entry(this, &mm->free, fl_entry) {
@@ -147,6 +149,7 @@ nvkm_mm_head(struct nvkm_mm *mm, u8 heap, u8 type, u32 size_max, u32 size_min,
 		if (!this)
 			return -ENOMEM;
 
+        pr_warning("offset %#x\n", this->offset);
 		this->next = NULL;
 		this->type = type;
 		list_del(&this->fl_entry);
@@ -189,11 +192,14 @@ nvkm_mm_tail(struct nvkm_mm *mm, u8 heap, u8 type, u32 size_max, u32 size_min,
 	struct nvkm_mm_node *prev, *this, *next;
 	u32 mask = align - 1;
 
+    pr_warning("func %s, heap %#x type %#x size_max %#x align %#x\n",
+               __func__, heap, type, size_max, align);
 	BUG_ON(type == NVKM_MM_TYPE_NONE || type == NVKM_MM_TYPE_HOLE);
 
 	list_for_each_entry_reverse(this, &mm->free, fl_entry) {
 		u32 e = this->offset + this->length;
 		u32 s = this->offset;
+        pr_warning("start %#x, end %#x\n", s, e);
 		u32 c = 0, a;
 		if (unlikely(heap != NVKM_MM_HEAP_ANY)) {
 			if (this->heap != heap)
@@ -225,7 +231,7 @@ nvkm_mm_tail(struct nvkm_mm *mm, u8 heap, u8 type, u32 size_max, u32 size_min,
 		this = region_tail(mm, this, a);
 		if (!this)
 			return -ENOMEM;
-
+        pr_warning("offset %#x\n", this->offset);
 		this->next = NULL;
 		this->type = type;
 		list_del(&this->fl_entry);
@@ -242,11 +248,13 @@ nvkm_mm_init(struct nvkm_mm *mm, u8 heap, u32 offset, u32 length, u32 block)
 	struct nvkm_mm_node *node, *prev;
 	u32 next;
 
-	pr_warning("func %s: heap %x offset %x length %x block %x\n",
+	pr_warning("func %s params: heap %#x offset %#x length %#x block %#x\n",
 		       	__func__, heap, offset, length, block);
+    pr_warning("initialised %#x\n", nvkm_mm_initialised(mm));
 	if (nvkm_mm_initialised(mm)) {
 		prev = list_last_entry(&mm->nodes, typeof(*node), nl_entry);
 		next = prev->offset + prev->length;
+        pr_warning("initialised, next %#x\n", next);
 		if (next != offset) {
 			BUG_ON(next > offset);
 			if (!(node = kzalloc(sizeof(*node), GFP_KERNEL)))
@@ -287,6 +295,7 @@ nvkm_mm_fini(struct nvkm_mm *mm)
 	struct nvkm_mm_node *node, *temp;
 	int nodes = 0;
 
+    pr_warning("func %s\n", __func__);
 	if (!nvkm_mm_initialised(mm))
 		return 0;
 

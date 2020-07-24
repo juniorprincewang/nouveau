@@ -62,6 +62,9 @@ nv50_instobj_wr32_slow(struct nvkm_memory *memory, u64 offset, u32 data)
 	u64 addr = (nvkm_memory_addr(iobj->ram) + offset) & 0x000000fffffULL;
 	unsigned long flags;
 
+    nvkm_trace(&nv50_instobj(memory)->imem->base.subdev,
+               "func %s: base %#llx addr %#llx data %#x",
+               __func__, base, addr, data);
 	spin_lock_irqsave(&imem->base.lock, flags);
 	if (unlikely(imem->addr != base)) {
 		nvkm_wr32(device, 0x001700, base >> 16);
@@ -82,12 +85,17 @@ nv50_instobj_rd32_slow(struct nvkm_memory *memory, u64 offset)
 	u32 data;
 	unsigned long flags;
 
+    nvkm_trace(&nv50_instobj(memory)->imem->base.subdev,
+               "func %s: base %#llx addr %#llx",
+               __func__, base, addr);
 	spin_lock_irqsave(&imem->base.lock, flags);
 	if (unlikely(imem->addr != base)) {
 		nvkm_wr32(device, 0x001700, base >> 16);
 		imem->addr = base;
 	}
 	data = nvkm_rd32(device, 0x700000 + addr);
+    nvkm_trace(&nv50_instobj(memory)->imem->base.subdev,
+               "func %s: data %#x", __func__, data);
 	spin_unlock_irqrestore(&imem->base.lock, flags);
 	return data;
 }
@@ -101,13 +109,20 @@ nv50_instobj_slow = {
 static void
 nv50_instobj_wr32(struct nvkm_memory *memory, u64 offset, u32 data)
 {
+    nvkm_trace(&nv50_instobj(memory)->imem->base.subdev,
+               "func %s: map %p offset %#llx data %#x",
+               __func__, nv50_instobj(memory)->map, offset, data);
 	iowrite32_native(data, nv50_instobj(memory)->map + offset);
 }
 
 static u32
 nv50_instobj_rd32(struct nvkm_memory *memory, u64 offset)
 {
-	return ioread32_native(nv50_instobj(memory)->map + offset);
+	u32 data = ioread32_native(nv50_instobj(memory)->map + offset);
+    nvkm_trace(&nv50_instobj(memory)->imem->base.subdev,
+               "func %s: map %p data %#x",
+               __func__, nv50_instobj(memory)->map + offset, data);
+    return data;
 }
 
 static const struct nvkm_memory_ptrs
@@ -129,7 +144,7 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 	void *emap;
 	int ret;
 
-	nvkm_trace(subdev, "func %s: \n", __func__);
+	nvkm_trace(subdev, "func %s size %#llx\n", __func__, size);
 	/* Attempt to allocate BAR2 address-space and map the object
 	 * into it.  The lock has to be dropped while doing this due
 	 * to the possibility of recursion for page table allocation.
@@ -173,12 +188,18 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 	/* Make the mapping visible to the host. */
 	iobj->bar = bar;
 	iobj->map = ioremap_wc(device->func->resource_addr(device, 3) +
-			       (u32)iobj->bar->addr, size);
+	 		       (u32)iobj->bar->addr, size);
+    nvkm_trace(subdev, "bar 3 map addr %p : ...", iobj->map);
+    nvkm_trace(subdev, "bar 3 physical addr %#llx, vma addr %#llx, size %#llx",
+               device->func->resource_addr(device, 3),
+               bar->addr,
+               size);
 	if (!iobj->map) {
 		nvkm_warn(subdev, "PRAMIN ioremap failed\n");
 		nvkm_vmm_put(vmm, &iobj->bar);
 	} else {
-		nvkm_debug(subdev, "bar->addr %x iobj->map %p: \n", (u32)iobj->bar->addr, iobj->map);
+		nvkm_debug(subdev, "bar->addr %x iobj->map %p: \n",
+                   (u32)iobj->bar->addr, iobj->map);
 	}
 }
 
@@ -197,7 +218,7 @@ nv50_instobj_release(struct nvkm_memory *memory)
 	struct nv50_instmem *imem = iobj->imem;
 	struct nvkm_subdev *subdev = &imem->base.subdev;
 
-	nvkm_trace(subdev, "func %s: \n", __func__);
+	nvkm_trace(subdev, "func %s", __func__);
 	wmb();
 	nvkm_bar_flush(subdev->device->bar);
 
@@ -224,6 +245,7 @@ nv50_instobj_acquire(struct nvkm_memory *memory)
 	struct nvkm_vmm *vmm;
 	void __iomem *map = NULL;
 
+    nvkm_trace(&imem->subdev, "func %s\n", __func__);
 	/* Already mapped? */
 	if (refcount_inc_not_zero(&iobj->maps)) {
 		return iobj->map;
@@ -244,7 +266,8 @@ nv50_instobj_acquire(struct nvkm_memory *memory)
 		if (!iobj->map)
 			nv50_instobj_kmap(iobj, vmm);
 		map = iobj->map;
-		nvkm_trace(&imem->subdev, "func %s: iobj->map %p\n", __func__, iobj->map);
+		nvkm_trace(&imem->subdev, "func %s: paddr %#llx iobj->map %p",
+                   __func__, nvkm_memory_addr(iobj->ram), iobj->map);
 	}
 
 	if (!refcount_inc_not_zero(&iobj->maps)) {
@@ -310,6 +333,7 @@ nv50_instobj_dtor(struct nvkm_memory *memory)
 	struct nvkm_vma *bar;
 	void *map = map;
 
+	nvkm_trace(&imem->subdev, "func %s: \n", __func__);
 	mutex_lock(&imem->subdev.mutex);
 	if (likely(iobj->lru.next))
 		list_del(&iobj->lru);

@@ -33,7 +33,7 @@ nvkm_ummu_sclass(struct nvkm_object *object, int index,
 		 struct nvkm_oclass *oclass)
 {
 	struct nvkm_mmu *mmu = nvkm_ummu(object)->mmu;
-	nvif_debug(object, "ummu sclass\n");
+	nvif_debug(object, "func %s\n", __func__);
 
 	if (mmu->func->mem.user.oclass && oclass->client->super) {
 		if (index-- == 0) {

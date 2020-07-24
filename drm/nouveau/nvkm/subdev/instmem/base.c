@@ -104,8 +104,10 @@ nvkm_instobj_new(struct nvkm_instmem *imem, u32 size, u32 align, bool zero,
 		goto done;
 	}
 
-	nvkm_trace(subdev, "new %08x %08x %d: %010llx %010llx\n", size, align,
-		   zero, nvkm_memory_addr(memory), nvkm_memory_size(memory));
+    nvkm_trace(subdev, "new size %08x align %08x zero %d: "
+               "instmem addr %010llx size %010llx\n",
+               size, align, zero,
+               nvkm_memory_addr(memory), nvkm_memory_size(memory));
 
 	if (!imem->func->zero && zero) {
 		void __iomem *map = nvkm_kmap(memory);

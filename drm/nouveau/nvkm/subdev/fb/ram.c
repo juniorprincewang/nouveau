@@ -114,6 +114,10 @@ nvkm_ram_get(struct nvkm_device *device, u8 heap, u8 type, u8 rpage, u64 size,
 	u32   min = contig ? max : align;
 	int ret;
 
+	nvkm_debug(&device->fb->subdev,
+               "func %s: heap %#x type %#x rpage %#x size %#llx "
+               "contig %#x back %#x\n",
+               __func__, heap, type, rpage, size, contig, back);
 	if (!device->fb || !(ram = device->fb->ram))
 		return -ENODEV;
 	ram = device->fb->ram;

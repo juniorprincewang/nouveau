@@ -34,8 +34,11 @@ gf100_vmm_pgt_pte(struct nvkm_vmm *vmm, struct nvkm_mmu_pt *pt,
 {
 	u64 base = (addr >> 8) | map->type;
 	u64 data = base;
-	VMM_DEBUG(vmm, "func %s map ctag 0x%llx map->next 0x%llx\n",
+	VMM_DEBUG(vmm, "func %s map_ctag 0x%llx map->next 0x%llx",
 		       	__func__, map->ctag, map->next);
+    VMM_DEBUG(vmm, "pt : ptei %#x ptes %#x base %#x paddr %#llx",
+              ptei, ptes, pt->base, pt->addr);
+    VMM_DEBUG(vmm, "addr %#llx map->type %#llx base %#llx",addr, map->type, base);
 
 	if (map->ctag && !(map->next & (1ULL << 44))) {
 		while (ptes--) {
@@ -60,7 +63,7 @@ void
 gf100_vmm_pgt_sgl(struct nvkm_vmm *vmm, struct nvkm_mmu_pt *pt,
 		  u32 ptei, u32 ptes, struct nvkm_vmm_map *map)
 {
-	VMM_DEBUG(vmm, "func %s\n", __func__);
+	VMM_DEBUG(vmm, "func %s", __func__);
 	VMM_MAP_ITER_SGL(vmm, pt, ptei, ptes, map, gf100_vmm_pgt_pte);
 }
 
@@ -68,7 +71,7 @@ void
 gf100_vmm_pgt_dma(struct nvkm_vmm *vmm, struct nvkm_mmu_pt *pt,
 		  u32 ptei, u32 ptes, struct nvkm_vmm_map *map)
 {
-	VMM_DEBUG(vmm, "func %s\n", __func__);
+	VMM_DEBUG(vmm, "func %s", __func__);
 	if (map->page->shift == PAGE_SHIFT) {
 		VMM_SPAM(vmm, "DMAA %08x %08x PTE(s)", ptei, ptes);
 		nvkm_kmap(pt->memory);
@@ -88,7 +91,7 @@ void
 gf100_vmm_pgt_mem(struct nvkm_vmm *vmm, struct nvkm_mmu_pt *pt,
 		  u32 ptei, u32 ptes, struct nvkm_vmm_map *map)
 {
-	VMM_DEBUG(vmm, "func %s\n", __func__);
+	VMM_DEBUG(vmm, "func %s", __func__);
 	VMM_MAP_ITER_MEM(vmm, pt, ptei, ptes, map, gf100_vmm_pgt_pte);
 }
 
@@ -96,7 +99,7 @@ void
 gf100_vmm_pgt_unmap(struct nvkm_vmm *vmm,
 		    struct nvkm_mmu_pt *pt, u32 ptei, u32 ptes)
 {
-	VMM_DEBUG(vmm, "func %s\n", __func__);
+	VMM_DEBUG(vmm, "func %s", __func__);
 	VMM_FO064(pt, vmm, ptei * 8, 0ULL, ptes);
 }
 
@@ -116,9 +119,9 @@ gf100_vmm_pgd_pde(struct nvkm_vmm *vmm, struct nvkm_vmm_pt *pgd, u32 pdei)
 	struct nvkm_mmu_pt *pt;
 	u64 data = 0;
 
-	VMM_DEBUG(vmm, "func %s pdei 0x%x\n", __func__, pdei);
+	VMM_DEBUG(vmm, "func %s pdei 0x%x", __func__, pdei);
 	if ((pt = pgt->pt[0])) {
-		VMM_DEBUG(vmm, "Non spt\n");
+		VMM_DEBUG(vmm, "func %s : Non spt", __func__);
 		switch (nvkm_memory_target(pt->memory)) {
 		case NVKM_MEM_TARGET_VRAM: data |= 1ULL << 0; break;
 		case NVKM_MEM_TARGET_HOST: data |= 2ULL << 0;
@@ -133,7 +136,7 @@ gf100_vmm_pgd_pde(struct nvkm_vmm *vmm, struct nvkm_vmm_pt *pgd, u32 pdei)
 	}
 
 	if ((pt = pgt->pt[1])) {
-		VMM_DEBUG(vmm, "spt\n");
+		VMM_DEBUG(vmm, "func %s : pt addr %#llx", __func__, pt->addr);
 		switch (nvkm_memory_target(pt->memory)) {
 		case NVKM_MEM_TARGET_VRAM: data |= 1ULL << 32; break;
 		case NVKM_MEM_TARGET_HOST: data |= 2ULL << 32;
@@ -147,6 +150,7 @@ gf100_vmm_pgd_pde(struct nvkm_vmm *vmm, struct nvkm_vmm_pt *pgd, u32 pdei)
 		data |= pt->addr << 24;
 	}
 
+	VMM_DEBUG(vmm, "func %s : write data %#llx to pd", __func__, data);
 	nvkm_kmap(pd->memory);
 	VMM_WO064(pd, vmm, pdei * 8, data);
 	nvkm_done(pd->memory);
@@ -192,7 +196,7 @@ gf100_vmm_flush_(struct nvkm_vmm *vmm, int depth)
 	struct nvkm_subdev *subdev = &vmm->mmu->subdev;
 	struct nvkm_device *device = subdev->device;
 	u32 type = depth << 24;
-	VMM_DEBUG(vmm, "func %s\n", __func__);
+	VMM_DEBUG(vmm, "func %s", __func__);
 
 	type = 0x00000001; /* PAGE_ALL */
 	if (atomic_read(&vmm->engref[NVKM_SUBDEV_BAR]))
@@ -207,7 +211,10 @@ gf100_vmm_flush_(struct nvkm_vmm *vmm, int depth)
 			break;
 	);
 
+	VMM_DEBUG(vmm, "func %s: pd addr %#llx", __func__, vmm->pd->pt[0]->addr >> 8);
+    // PFFB.VM.TLB_FLUSH_VSPACE
 	nvkm_wr32(device, 0x100cb8, vmm->pd->pt[0]->addr >> 8);
+    // PFFB.VM.TLB_FLUSH_TRIGGER
 	nvkm_wr32(device, 0x100cbc, 0x80000000 | type);
 
 	/* Wait for flush to be queued? */
@@ -241,7 +248,7 @@ gf100_vmm_valid(struct nvkm_vmm *vmm, void *argv, u32 argc,
 	int kindn, aper, ret = -ENOSYS;
 	const u8 *kindm;
 
-	VMM_DEBUG(vmm, "func %s\n", __func__);
+	VMM_DEBUG(vmm, "func %s", __func__);
 	map->next = (1 << page->shift) >> 8;
 	map->type = map->ctag = 0;
 
@@ -308,6 +315,7 @@ gf100_vmm_valid(struct nvkm_vmm *vmm, void *argv, u32 argc,
 	map->type |= (u64) vol << 32;
 	map->type |= (u64)aper << 33;
 	map->type |= (u64)kind << 36;
+	VMM_DEBUG(vmm, "validation map->type %#llx", map->type);
 	return 0;
 }
 
@@ -347,12 +355,14 @@ gf100_vmm_join_(struct nvkm_vmm *vmm, struct nvkm_memory *inst, u64 base)
 	}
 	base |= pd->addr;
 
-	VMM_DEBUG(vmm, "pd target %d addr 0x%llx", nvkm_memory_target(pd->memory), pd->addr);
-	VMM_DEBUG(vmm, "base 0x%llx limit 0x%llx", base, vmm->limit);
+	VMM_DEBUG(vmm, "pd target %d paddr 0x%llx",
+              nvkm_memory_target(pd->memory), pd->addr);
 	nvkm_kmap(inst);
 	nvkm_wo64(inst, 0x0200, base);
 	nvkm_wo64(inst, 0x0208, vmm->limit - 1);
 	nvkm_done(inst);
+	VMM_DEBUG(vmm, "func %s: base 0x%llx limit 0x%llx",
+              __func__, base, vmm->limit);
 	return 0;
 }
 
