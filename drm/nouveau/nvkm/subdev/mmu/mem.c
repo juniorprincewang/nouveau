@@ -155,6 +155,7 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 	struct nvkm_mem *mem;
 	gfp_t gfp = GFP_USER | __GFP_ZERO;
 
+    nvkm_trace(subdev, "func %s", __func__);
 	if ( (mmu->type[type].type & NVKM_MEM_COHERENT) &&
 	    !(mmu->type[type].type & NVKM_MEM_UNCACHED))
 		target = NVKM_MEM_TARGET_HOST;
@@ -169,7 +170,7 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 	mem->target = target;
 	mem->mmu = mmu;
 	*pmemory = &mem->memory;
-	nvkm_debug(subdev, "func %s type %d page %d size 0x%llx\n", 
+	nvkm_debug(subdev, "func %s: type %d page %d size 0x%llx\n",
 			__func__, type, page, size);
 
 	if (!(ret = nvif_unpack(ret, &argv, &argc, args->v0, 0, 0, false))) {
@@ -238,7 +239,7 @@ nvkm_mem_new_type(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 		ret = mmu->func->mem.vram(mmu, type, page, size,
 					  argv, argc, &memory);
 	} else {
-		nvkm_debug(subdev, "func %s type %x\n", __func__, mmu->type[type].type);
+		nvkm_debug(subdev, "func %s: type %#x\n", __func__, mmu->type[type].type);
 		ret = nvkm_mem_new_host(mmu, type, page, size,
 					argv, argc, &memory);
 	}

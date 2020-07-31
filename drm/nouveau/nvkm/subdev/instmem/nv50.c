@@ -144,7 +144,7 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 	void *emap;
 	int ret;
 
-	nvkm_trace(subdev, "func %s size %#llx\n", __func__, size);
+	nvkm_trace(subdev, "func %s instmem size %#llx\n", __func__, size);
 	/* Attempt to allocate BAR2 address-space and map the object
 	 * into it.  The lock has to be dropped while doing this due
 	 * to the possibility of recursion for page table allocation.
@@ -189,8 +189,9 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 	iobj->bar = bar;
 	iobj->map = ioremap_wc(device->func->resource_addr(device, 3) +
 	 		       (u32)iobj->bar->addr, size);
-    nvkm_trace(subdev, "bar 3 map addr %p : ...", iobj->map);
-    nvkm_trace(subdev, "bar 3 physical addr %#llx, vma addr %#llx, size %#llx",
+    nvkm_trace(subdev, "func %s: bar 3 paddr %#llx,"
+               " vma addr %#llx, size %#llx",
+               __func__,
                device->func->resource_addr(device, 3),
                bar->addr,
                size);
@@ -198,8 +199,8 @@ nv50_instobj_kmap(struct nv50_instobj *iobj, struct nvkm_vmm *vmm)
 		nvkm_warn(subdev, "PRAMIN ioremap failed\n");
 		nvkm_vmm_put(vmm, &iobj->bar);
 	} else {
-		nvkm_debug(subdev, "bar->addr %x iobj->map %p: \n",
-                   (u32)iobj->bar->addr, iobj->map);
+		nvkm_debug(subdev, "func %s end: vma bar->addr %#x iobj->map %p",
+                   __func__, (u32)iobj->bar->addr, iobj->map);
 	}
 }
 
@@ -291,7 +292,7 @@ nv50_instobj_boot(struct nvkm_memory *memory, struct nvkm_vmm *vmm)
 {
 	struct nv50_instobj *iobj = nv50_instobj(memory);
 	struct nvkm_instmem *imem = &iobj->imem->base;
-	nvkm_trace(&imem->subdev, "func %s: \n", __func__);
+	nvkm_trace(&imem->subdev, "func %s", __func__);
 
 	/* Exclude bootstrapped objects (ie. the page tables for the
 	 * instmem BAR itself) from eviction.

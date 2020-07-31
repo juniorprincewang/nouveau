@@ -240,19 +240,6 @@ struct nvkm_device_chip {
 struct nvkm_device *nvkm_device_find(u64 name);
 int nvkm_device_list(u64 *name, int size);
 
-/* privileged register interface accessor macros */
-#define nvkm_rd08(d,a) ioread8((d)->pri + (a))
-#define nvkm_rd16(d,a) ioread16_native((d)->pri + (a))
-#define nvkm_rd32(d,a) ioread32_native((d)->pri + (a))
-#define nvkm_wr08(d,a,v) iowrite8((v), (d)->pri + (a))
-#define nvkm_wr16(d,a,v) iowrite16_native((v), (d)->pri + (a))
-#define nvkm_wr32(d,a,v) iowrite32_native((v), (d)->pri + (a))
-#define nvkm_mask(d,a,m,v) ({                                                  \
-	struct nvkm_device *_device = (d);                                     \
-	u32 _addr = (a), _temp = nvkm_rd32(_device, _addr);                    \
-	nvkm_wr32(_device, _addr, (_temp & ~(m)) | (v));                       \
-	_temp;                                                                 \
-})
 
 void nvkm_device_del(struct nvkm_device **);
 
@@ -278,4 +265,25 @@ extern const struct nvkm_sclass nvkm_udevice_sclass;
 #define nvdev_debug(d,f,a...) nvdev_printk((d), DEBUG,   info, f, ##a)
 #define nvdev_trace(d,f,a...) nvdev_printk((d), TRACE,   info, f, ##a)
 #define nvdev_spam(d,f,a...)  nvdev_printk((d),  SPAM,    dbg, f, ##a)
+
+
+/* privileged register interface accessor macros */
+#define nvkm_rd08(d,a) ioread8((d)->pri + (a))
+#define nvkm_rd16(d,a) ioread16_native((d)->pri + (a))
+//#define nvkm_rd32(d,a) ioread32_native((d)->pri + (a))
+#define nvkm_rd32(d,a) ioread32_native((d)->pri + (a))
+#define nvkm_wr08(d,a,v) iowrite8((v), (d)->pri + (a))
+#define nvkm_wr16(d,a,v) iowrite16_native((v), (d)->pri + (a))
+#define nvkm_wr32(d,a,v) ({ \
+    iowrite32_native((v), (d)->pri + (a)); \
+    nvdev_info((d), "wr32 MMIO %#x value %#x\n", (u32)(a), (u32)(v)); \
+})
+    //nvdev_debug((d), "wr32 MMIO %#x, v %#x\n", (u32)(a), (u32)(v));
+#define nvkm_mask(d,a,m,v) ({                                                  \
+	struct nvkm_device *_device = (d);                                     \
+	u32 _addr = (a), _temp = ioread32_native(_device->pri +  _addr);                    \
+    iowrite32_native((_temp & ~(m)) | (v), _device->pri + _addr); \
+	_temp;                                                                 \
+})
+
 #endif

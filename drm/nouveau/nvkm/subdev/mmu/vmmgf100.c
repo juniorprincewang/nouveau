@@ -71,9 +71,10 @@ void
 gf100_vmm_pgt_dma(struct nvkm_vmm *vmm, struct nvkm_mmu_pt *pt,
 		  u32 ptei, u32 ptes, struct nvkm_vmm_map *map)
 {
-	VMM_DEBUG(vmm, "func %s", __func__);
+	VMM_DEBUG(vmm, "func %s: page shift %d map->dma %p map->type %lld",
+              __func__, map->page->shift, map->dma, map->type);
 	if (map->page->shift == PAGE_SHIFT) {
-		VMM_SPAM(vmm, "DMAA %08x %08x PTE(s)", ptei, ptes);
+		VMM_DEBUG(vmm, "DMAA %08x %08x PTE(s)", ptei, ptes);
 		nvkm_kmap(pt->memory);
 		while (ptes--) {
 			const u64 data = (*map->dma++ >> 8) | map->type;
@@ -119,7 +120,7 @@ gf100_vmm_pgd_pde(struct nvkm_vmm *vmm, struct nvkm_vmm_pt *pgd, u32 pdei)
 	struct nvkm_mmu_pt *pt;
 	u64 data = 0;
 
-	VMM_DEBUG(vmm, "func %s pdei 0x%x", __func__, pdei);
+	VMM_DEBUG(vmm, "func %s: pdei 0x%x", __func__, pdei);
 	if ((pt = pgt->pt[0])) {
 		VMM_DEBUG(vmm, "func %s : Non spt", __func__);
 		switch (nvkm_memory_target(pt->memory)) {
@@ -136,7 +137,7 @@ gf100_vmm_pgd_pde(struct nvkm_vmm *vmm, struct nvkm_vmm_pt *pgd, u32 pdei)
 	}
 
 	if ((pt = pgt->pt[1])) {
-		VMM_DEBUG(vmm, "func %s : pt addr %#llx", __func__, pt->addr);
+		VMM_DEBUG(vmm, "func %s : spt addr %#llx", __func__, pt->addr);
 		switch (nvkm_memory_target(pt->memory)) {
 		case NVKM_MEM_TARGET_VRAM: data |= 1ULL << 32; break;
 		case NVKM_MEM_TARGET_HOST: data |= 2ULL << 32;
@@ -150,7 +151,8 @@ gf100_vmm_pgd_pde(struct nvkm_vmm *vmm, struct nvkm_vmm_pt *pgd, u32 pdei)
 		data |= pt->addr << 24;
 	}
 
-	VMM_DEBUG(vmm, "func %s : write data %#llx to pd", __func__, data);
+	VMM_DEBUG(vmm, "func %s : write data %#llx to pd %#llx offset %#x",
+              __func__, data, nvkm_memory_addr(pd->memory), pdei*8);
 	nvkm_kmap(pd->memory);
 	VMM_WO064(pd, vmm, pdei * 8, data);
 	nvkm_done(pd->memory);
@@ -211,7 +213,6 @@ gf100_vmm_flush_(struct nvkm_vmm *vmm, int depth)
 			break;
 	);
 
-	VMM_DEBUG(vmm, "func %s: pd addr %#llx", __func__, vmm->pd->pt[0]->addr >> 8);
     // PFFB.VM.TLB_FLUSH_VSPACE
 	nvkm_wr32(device, 0x100cb8, vmm->pd->pt[0]->addr >> 8);
     // PFFB.VM.TLB_FLUSH_TRIGGER
@@ -223,6 +224,8 @@ gf100_vmm_flush_(struct nvkm_vmm *vmm, int depth)
 			break;
 	);
 	mutex_unlock(&subdev->mutex);
+	VMM_DEBUG(vmm, "func %s end: pd addr %#llx type %#x",
+              __func__, vmm->pd->pt[0]->addr >> 8, type);
 }
 
 void
@@ -355,8 +358,9 @@ gf100_vmm_join_(struct nvkm_vmm *vmm, struct nvkm_memory *inst, u64 base)
 	}
 	base |= pd->addr;
 
-	VMM_DEBUG(vmm, "pd target %d paddr 0x%llx",
+	VMM_DEBUG(vmm, "pde target %d paddr 0x%llx",
               nvkm_memory_target(pd->memory), pd->addr);
+	VMM_DEBUG(vmm, "pd paddr %#llx", nvkm_memory_addr(inst));
 	nvkm_kmap(inst);
 	nvkm_wo64(inst, 0x0200, base);
 	nvkm_wo64(inst, 0x0208, vmm->limit - 1);

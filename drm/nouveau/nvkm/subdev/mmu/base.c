@@ -26,6 +26,7 @@
 
 #include <subdev/bar.h>
 #include <subdev/fb.h>
+#include <core/subdev.h>
 
 #include <nvif/if500d.h>
 #include <nvif/if900d.h>
@@ -170,6 +171,7 @@ nvkm_mmu_ptc_get(struct nvkm_mmu *mmu, u32 size, u32 align, bool zero)
 	struct nvkm_mmu_pt *pt;
 	int ret;
 
+    nvkm_trace(&mmu->subdev, "func %s: size %#x zero %d", __func__, size, zero);
 	/* Sub-allocated page table (ie. GP100 LPT). */
 	if (align < 0x1000) {
 		mutex_lock(&mmu->ptp.mutex);
@@ -194,6 +196,8 @@ nvkm_mmu_ptc_get(struct nvkm_mmu *mmu, u32 size, u32 align, bool zero)
 		list_del(&pt->head);
 		ptc->refs--;
 		mutex_unlock(&mmu->ptc.mutex);
+        nvkm_trace(&mmu->subdev, "func %s: found pt addr %#llx",
+                   __func__, pt->addr);
 		return pt;
 	}
 	mutex_unlock(&mmu->ptc.mutex);

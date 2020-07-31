@@ -56,6 +56,8 @@ gf100_bar_bar1_init(struct nvkm_bar *base)
 	struct nvkm_device *device = base->subdev.device;
 	struct gf100_bar *bar = gf100_bar(base);
 	const u32 addr = nvkm_memory_addr(bar->bar[1].inst) >> 12;
+    nvkm_trace(&device->bar->subdev, "func %s: inst addr %#x",
+               __func__, addr);
 	nvkm_wr32(device, 0x001704, 0x80000000 | addr);
 }
 
@@ -83,8 +85,10 @@ gf100_bar_bar2_init(struct nvkm_bar *base)
 	u32 addr = nvkm_memory_addr(bar->bar[0].inst) >> 12;
 	if (bar->bar2_halve)
 		addr |= 0x40000000;
-    nvdev_trace(device, "func %s\n", __func__);
-    nvkm_trace(&device->bar->subdev, "addr %#x \n", addr);
+    nvkm_trace(&device->bar->subdev, "func %s: inst addr %#x",
+               __func__, addr);
+    // PBUS.HOST_MEM.BAR3 =>
+    //      { CHAN = { ADDRESS = 0x7fd75000 | TARGET = VRAM  } | MODE = VM  }
 	nvkm_wr32(device, 0x001714, 0x80000000 | addr);
 }
 
@@ -96,6 +100,8 @@ gf100_bar_oneinit_bar(struct gf100_bar *bar, struct gf100_barN *bar_vm,
 	resource_size_t bar_len;
 	int ret;
 
+    nvkm_trace(&device->bar->subdev, "func %s: bar %d",
+               __func__, bar_nr);
 	ret = nvkm_memory_new(device, NVKM_MEM_TARGET_INST, 0x1000, 0, false,
 			      &bar_vm->inst);
 	if (ret)
@@ -132,6 +138,7 @@ gf100_bar_oneinit(struct nvkm_bar *base)
 	static struct lock_class_key bar2_lock;
 	struct gf100_bar *bar = gf100_bar(base);
 	int ret;
+    nvkm_trace(&base->subdev, "func %s", __func__);
 
 	/* BAR2 */
 	if (bar->base.func->bar2.init) {
