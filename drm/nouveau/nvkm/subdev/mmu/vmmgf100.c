@@ -71,7 +71,7 @@ void
 gf100_vmm_pgt_dma(struct nvkm_vmm *vmm, struct nvkm_mmu_pt *pt,
 		  u32 ptei, u32 ptes, struct nvkm_vmm_map *map)
 {
-	VMM_DEBUG(vmm, "func %s: page shift %d map->dma %p map->type %lld",
+	VMM_DEBUG(vmm, "func %s: page shift %#x map->dma %p map->type %#llx",
               __func__, map->page->shift, map->dma, map->type);
 	if (map->page->shift == PAGE_SHIFT) {
 		VMM_DEBUG(vmm, "DMAA %08x %08x PTE(s)", ptei, ptes);
@@ -260,7 +260,7 @@ gf100_vmm_valid(struct nvkm_vmm *vmm, void *argv, u32 argc,
 		ro   = !!args->v0.ro;
 		priv = !!args->v0.priv;
 		kind =   args->v0.kind;
-		VMM_DEBUG(vmm, "vol %d ro %d priv %d kind %d\n", vol, ro, priv, kind);
+		VMM_DEBUG(vmm, "vol %d ro %d priv %d kind %d", vol, ro, priv, kind);
 	} else
 	if (!(ret = nvif_unvers(ret, &argv, &argc, args->vn))) {
 		vol  = target == NVKM_MEM_TARGET_HOST;

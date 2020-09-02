@@ -105,5 +105,9 @@ nouveau_sgdma_create_ttm(struct ttm_bo_device *bdev,
 		 * to free nvbe here.
 		 */
 		return NULL;
+    NV_INFO(drm, "func %s: ttm.dma_address %p num_pages %#lx",
+            __func__, nvbe->ttm.dma_address, nvbe->ttm.ttm.num_pages);
+    NV_INFO(drm, "func %s: ttm.dma_address[0] %#llx",
+            __func__, *nvbe->ttm.dma_address);
 	return &nvbe->ttm.ttm;
 }

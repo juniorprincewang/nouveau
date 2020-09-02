@@ -185,6 +185,30 @@ nouveau_bo_fixup_align(struct nouveau_bo *nvbo, u32 flags,
 	*size = roundup_64(*size, PAGE_SIZE);
 }
 
+static void dump_flags_to_strings(struct nouveau_drm *drm, uint32_t flags)
+{
+    if(flags & TTM_PL_FLAG_SYSTEM)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_SYSTEM");
+    if(flags & TTM_PL_FLAG_TT)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_TT");
+    if(flags & TTM_PL_FLAG_VRAM)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_VRAM");
+    if(flags & TTM_PL_FLAG_PRIV)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_PRIV");
+    if(flags & TTM_PL_FLAG_CACHED)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_CACHED");
+    if(flags & TTM_PL_FLAG_UNCACHED)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_UNCACHED");
+    if(flags & TTM_PL_FLAG_WC)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_WC");
+    if(flags & TTM_PL_FLAG_CONTIGUOUS)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_CONTIGUOUS");
+    if(flags & TTM_PL_FLAG_NO_EVICT)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_NO_EVICT");
+    if(flags & TTM_PL_FLAG_TOPDOWN)
+        NV_INFO(drm, "%s|", "TTM_PL_FLAG_TOPDOWN");
+}
+
 int
 nouveau_bo_new(struct nouveau_cli *cli, u64 size, int align,
 	       uint32_t flags, uint32_t tile_mode, uint32_t tile_flags,
@@ -198,8 +222,8 @@ nouveau_bo_new(struct nouveau_cli *cli, u64 size, int align,
 	size_t acc_size;
 	int type = ttm_bo_type_device;
 	int ret, i, pi = -1;
-	NV_WARN(drm, "func %s size %016llx flags %x\n", __func__, size, flags);
-
+	NV_WARN(drm, "func %s size %016llx flags %#x\n", __func__, size, flags);
+    dump_flags_to_strings(drm, flags);
 	if (!size) {
 		NV_WARN(drm, "skipped size %016llx\n", size);
 		return -EINVAL;
@@ -492,12 +516,20 @@ nouveau_bo_map(struct nouveau_bo *nvbo)
 	int ret;
 	struct nouveau_drm *drm = nouveau_bdev(nvbo->bo.bdev);
 
-	NV_WARN(drm, "func %s\n", __func__);
 	ret = ttm_bo_reserve(&nvbo->bo, false, false, NULL);
 	if (ret)
 		return ret;
 
+    NV_WARN(drm, "func %s: start 0 mem {num pages %#lx start %#lx size %#lx} "
+            "bus {is_iomem %#x base %#llx size %#lx offset %#lx}\n",
+            __func__, nvbo->bo.mem.num_pages,
+            nvbo->bo.mem.start, nvbo->bo.mem.size,
+            nvbo->bo.mem.bus.is_iomem,
+            nvbo->bo.mem.bus.base, nvbo->bo.mem.bus.size,
+            nvbo->bo.mem.bus.offset);
 	ret = ttm_bo_kmap(&nvbo->bo, 0, nvbo->bo.mem.num_pages, &nvbo->kmap);
+    NV_WARN(drm, "func %s: ret %#x map {virtual %p bo_kmap_type %x}\n",
+            __func__, ret, nvbo->kmap.virtual, nvbo->kmap.bo_kmap_type);
 
 	ttm_bo_unreserve(&nvbo->bo);
 	return ret;
@@ -585,8 +617,11 @@ u32
 nouveau_bo_rd32(struct nouveau_bo *nvbo, unsigned index)
 {
 	bool is_iomem;
+	struct nouveau_drm *drm = nouveau_bdev(nvbo->bo.bdev);
 	u32 *mem = ttm_kmap_obj_virtual(&nvbo->kmap, &is_iomem);
 
+	NV_WARN(drm, "func %s: is_iomem %d index %#x *mem %#x\n",
+            __func__, is_iomem, index, *mem);
 	mem += index;
 
 	if (is_iomem)
@@ -599,8 +634,11 @@ void
 nouveau_bo_wr32(struct nouveau_bo *nvbo, unsigned index, u32 val)
 {
 	bool is_iomem;
+	struct nouveau_drm *drm = nouveau_bdev(nvbo->bo.bdev);
 	u32 *mem = ttm_kmap_obj_virtual(&nvbo->kmap, &is_iomem);
 
+	NV_WARN(drm, "func %s: is_iomem %d index %#x mem %p val %#x\n",
+            __func__, is_iomem, index, mem, val);
 	mem += index;
 
 	if (is_iomem)
@@ -717,7 +755,10 @@ nouveau_bo_evict_flags(struct ttm_buffer_object *bo, struct ttm_placement *pl)
 static int
 nve0_bo_move_init(struct nouveau_channel *chan, u32 handle)
 {
-	int ret = RING_SPACE(chan, 2);
+	int ret = 0;
+	struct nouveau_cli *cli = (void *)chan->user.client;
+    NV_PRINTK(info, cli, "func %s: handle %#x", __func__, handle);
+    ret = RING_SPACE(chan, 2);
 	if (ret == 0) {
 		BEGIN_NVC0(chan, NvSubCopy, 0x0000, 1);
 		OUT_RING  (chan, handle & 0x0000ffff);
@@ -731,7 +772,10 @@ nve0_bo_move_copy(struct nouveau_channel *chan, struct ttm_buffer_object *bo,
 		  struct ttm_mem_reg *old_reg, struct ttm_mem_reg *new_reg)
 {
 	struct nouveau_mem *mem = nouveau_mem(old_reg);
-	int ret = RING_SPACE(chan, 10);
+	int ret = 0;
+	struct nouveau_cli *cli = (void *)chan->user.client;
+    NV_PRINTK(info, cli, "func %s", __func__);
+    ret = RING_SPACE(chan, 10);
 	if (ret == 0) {
 		BEGIN_NVC0(chan, NvSubCopy, 0x0400, 8);
 		OUT_RING  (chan, upper_32_bits(mem->vma[0].addr));
@@ -844,6 +888,7 @@ nva3_bo_move_copy(struct nouveau_channel *chan, struct ttm_buffer_object *bo,
 	u64 dst_offset = mem->vma[1].addr;
 	u32 page_count = new_reg->num_pages;
 	int ret;
+
 
 	page_count = new_reg->num_pages;
 	while (page_count) {
@@ -1171,6 +1216,7 @@ nouveau_bo_move_init(struct nouveau_drm *drm)
 	const char *name = "CPU";
 	int ret;
 
+	NV_INFO(drm, "func %s\n", __func__);
 	do {
 		struct nouveau_channel *chan;
 
@@ -1181,6 +1227,8 @@ nouveau_bo_move_init(struct nouveau_drm *drm)
 		if (chan == NULL)
 			continue;
 
+	    NV_INFO(drm, "func %s: engine %#x oclass %#x\n",
+                __func__, mthd->engine, mthd->oclass);
 		ret = nvif_object_init(&chan->user,
 				       mthd->oclass | (mthd->engine << 16),
 				       mthd->oclass, NULL, 0,
@@ -1280,7 +1328,9 @@ nouveau_bo_move_ntfy(struct ttm_buffer_object *bo, bool evict,
 	struct nouveau_mem *mem = new_reg ? nouveau_mem(new_reg) : NULL;
 	struct nouveau_bo *nvbo = nouveau_bo(bo);
 	struct nouveau_vma *vma;
+	struct nouveau_drm *drm = nouveau_bdev(bo->bdev);
 
+    NV_WARN(drm, "func %s", __func__);
 	/* ttm can now (stupidly) pass the driver bos it didn't create... */
 	if (bo->destroy != nouveau_bo_del_ttm)
 		return;
@@ -1572,15 +1622,19 @@ nouveau_ttm_tt_populate(struct ttm_tt *ttm)
 
 	drm = nouveau_bdev(ttm->bdev);
 	dev = drm->dev->dev;
+    NV_WARN(drm, "func %s: ttm->state %d slave %d",
+            __func__, ttm->state, slave);
 
 #if IS_ENABLED(CONFIG_AGP)
 	if (drm->agp.bridge) {
+        NV_WARN(drm, "func %s: ttm_agp_tt_populate", __func__);
 		return ttm_agp_tt_populate(ttm);
 	}
 #endif
 
 #if IS_ENABLED(CONFIG_SWIOTLB) && IS_ENABLED(CONFIG_X86)
 	if (swiotlb_nr_tbl()) {
+        NV_WARN(drm, "func %s: ttm_dma_populate", __func__);
 		return ttm_dma_populate((void *)ttm, dev);
 	}
 #endif
@@ -1607,6 +1661,8 @@ nouveau_ttm_tt_populate(struct ttm_tt *ttm)
 		}
 
 		ttm_dma->dma_address[i] = addr;
+        NV_WARN(drm, "func %s: dma_map_page addr[%#x] %#llx",
+                __func__, i, addr);
 	}
 	return 0;
 }

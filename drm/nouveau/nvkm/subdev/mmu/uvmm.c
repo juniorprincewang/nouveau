@@ -105,9 +105,9 @@ nvkm_uvmm_mthd_map(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 		size = args->v0.size;
 		handle = args->v0.memory;
 		offset = args->v0.offset;
-		VMM_DEBUG(vmm, "func %s: uvmm mthd map addr %016llx size 0x%llx "
+		VMM_DEBUG(vmm, "func %s: new vers %d addr %016llx size 0x%llx "
 				"handle memory 0x%llx offset 0x%llx",
-                __func__, addr, size, handle, offset);
+                __func__, args->v0.version, addr, size, handle, offset);
 	} else
 		return ret;
 
@@ -238,7 +238,7 @@ nvkm_uvmm_mthd_get(struct nvkm_uvmm *uvmm, void *argv, u32 argc)
 		align = args->v0.align;
 		size = args->v0.size;
 		VMM_DEBUG(vmm, "func %s: uvmm mthd get getref %d mapref %d sparse %d "
-				"page %d align %d size 0x%llx\n",
+				"page %d align %d size 0x%llx",
                 __func__, getref, mapref, sparse, page, align, size);
 	} else
 		return ret;

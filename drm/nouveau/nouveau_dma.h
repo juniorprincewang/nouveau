@@ -89,8 +89,9 @@ static __must_check inline int
 RING_SPACE(struct nouveau_channel *chan, int size)
 {
 	int ret;
+	struct nouveau_cli *cli = (void *)chan->user.client;
 
-	printk(KERN_WARNING "func %s data size 0x%x\n", __func__, size);
+	NV_PRINTK(warn, cli, "func %s: data size %#x\n", __func__, size);
 	ret = nouveau_dma_wait(chan, 1, size);
 	if (ret)
 		return ret;
@@ -102,7 +103,9 @@ RING_SPACE(struct nouveau_channel *chan, int size)
 static inline void
 OUT_RING(struct nouveau_channel *chan, int data)
 {
-	printk(KERN_WARNING "func %s dma cur 0x%x data 0x%x\n", __func__, chan->dma.cur, data);
+	struct nouveau_cli *cli = (void *)chan->user.client;
+	NV_PRINTK(warn, cli, "func %s dma cur %#x data %#x\n",
+              __func__, chan->dma.cur, data);
 	nouveau_bo_wr32(chan->push.buffer, chan->dma.cur++, data);
 }
 
@@ -148,7 +151,9 @@ BEGIN_IMC0(struct nouveau_channel *chan, int subc, int mthd, u16 data)
 static inline void
 FIRE_RING(struct nouveau_channel *chan)
 {
-	printk(KERN_WARNING "func %s\n", __func__);
+	struct nouveau_cli *cli = (void *)chan->user.client;
+	NV_PRINTK(warn, cli, "func %s: chan->dma.cur %#x chan->dma.put %#x\n",
+              __func__, chan->dma.cur, chan->dma.put);
 	if (chan->dma.cur == chan->dma.put)
 		return;
 	chan->accel_done = true;

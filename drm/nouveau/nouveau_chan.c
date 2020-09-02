@@ -43,7 +43,7 @@
 #include "nouveau_vmm.h"
 
 MODULE_PARM_DESC(vram_pushbuf, "Create DMA push buffers in VRAM");
-int nouveau_vram_pushbuf;
+int nouveau_vram_pushbuf = 1;
 module_param_named(vram_pushbuf, nouveau_vram_pushbuf, int, 0400);
 
 static int
@@ -131,7 +131,7 @@ nouveau_channel_prep(struct nouveau_drm *drm, struct nvif_device *device,
 	chan->drm = drm;
 	atomic_set(&chan->killed, 0);
 
-	NV_INFO(drm, "allocate memory for dma push buffer\n"); 
+	NV_INFO(drm, "allocate memory for dma push buffer\n");
 	/* allocate memory for dma push buffer */
 	target = TTM_PL_FLAG_TT | TTM_PL_FLAG_UNCACHED;
 	if (nouveau_vram_pushbuf)
@@ -157,7 +157,7 @@ nouveau_channel_prep(struct nouveau_drm *drm, struct nvif_device *device,
 	chan->push.addr = chan->push.buffer->bo.offset;
 
 	if (device->info.family >= NV_DEVICE_INFO_V0_TESLA) {
-		NV_INFO(drm, "create dma vmm object for dma push buffer\n"); 
+		NV_INFO(drm, "create dma vmm object for dma push buffer\n");
 		ret = nouveau_vma_new(chan->push.buffer, &cli->vmm,
 				      &chan->push.vma);
 		if (ret) {
@@ -203,7 +203,8 @@ nouveau_channel_prep(struct nouveau_drm *drm, struct nvif_device *device,
 			args.limit = cli->vmm.vmm.limit - 1;
 		}
 	}
-	NV_INFO(drm, "allocate push ctxdma object\n"); 
+	NV_INFO(drm, "func %s: chan->push.addr %#llx\n", __func__, chan->push.addr);
+	NV_INFO(drm, "allocate push ctxdma object\n");
 
 	ret = nvif_object_init(&device->object, 0, NV_DMA_FROM_MEMORY,
 			       &args, sizeof(args), &chan->push.ctxdma);
@@ -238,14 +239,14 @@ nouveau_channel_ind(struct nouveau_drm *drm, struct nvif_device *device,
 	u32 size;
 	int ret;
 
-	NV_INFO(drm, "allocate dma push buffer\n"); 
+	NV_INFO(drm, "allocate dma push buffer\n");
 	/* allocate dma push buffer */
 	ret = nouveau_channel_prep(drm, device, 0x12000, &chan);
 	*pchan = chan;
 	if (ret)
 		return ret;
 
-	NV_INFO(drm, "create channel object\n"); 
+	NV_INFO(drm, "create channel object, engine %#x\n", engine);
 	/* create channel object */
 	do {
 		if (oclass[0] >= KEPLER_CHANNEL_GPFIFO_A) {
@@ -276,7 +277,7 @@ nouveau_channel_ind(struct nouveau_drm *drm, struct nvif_device *device,
 		if (ret == 0) {
 			if (chan->user.oclass >= KEPLER_CHANNEL_GPFIFO_A) {
 				chan->chid = args.kepler.chid;
-				NV_INFO(drm, "channel for kepler id %d\n", chan->chid); 
+				NV_INFO(drm, "channel for kepler id %d\n", chan->chid);
 			} else
 			if (chan->user.oclass >= FERMI_CHANNEL_GPFIFO)
 				chan->chid = args.fermi.chid;
@@ -337,8 +338,9 @@ nouveau_channel_init(struct nouveau_channel *chan, u32 vram, u32 gart)
 	struct nv_dma_v0 args = {};
 	int ret, i;
 
-	NV_WARN(drm, "%s", __func__);
+	NV_WARN(drm, "func %s", __func__);
 	nvif_object_map(&chan->user, NULL, 0);
+	NV_WARN(drm, "func %s: chan->user.map.ptr %p", __func__, chan->user.map.ptr);
 
 	if (chan->user.oclass >= FERMI_CHANNEL_GPFIFO) {
 		ret = nvif_notify_init(&chan->user, nouveau_channel_killed,

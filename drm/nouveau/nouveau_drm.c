@@ -314,7 +314,7 @@ nouveau_accel_init(struct nouveau_drm *drm)
 	ret = n = nvif_object_sclass_get(&device->object, &sclass);
 	if (ret < 0)
 		return;
-	NV_INFO(drm, "sclass num %d\n", ret);
+	NV_INFO(drm, "func %s: sclass num %d\n", __func__, ret);
 
 	for (ret = -ENOSYS, i = 0; i < n; i++) {
 		NV_INFO(drm, "sclass[%d].oclass 0x%x\n", i, sclass[i].oclass);

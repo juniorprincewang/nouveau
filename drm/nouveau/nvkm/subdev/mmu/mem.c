@@ -42,12 +42,18 @@ struct nvkm_mem {
 static enum nvkm_memory_target
 nvkm_mem_target(struct nvkm_memory *memory)
 {
+	struct nvkm_mem *mem = nvkm_mem(memory);
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	return nvkm_mem(memory)->target;
 }
 
 static u8
 nvkm_mem_page(struct nvkm_memory *memory)
 {
+	struct nvkm_mem *mem = nvkm_mem(memory);
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	return PAGE_SHIFT;
 }
 
@@ -55,6 +61,8 @@ static u64
 nvkm_mem_addr(struct nvkm_memory *memory)
 {
 	struct nvkm_mem *mem = nvkm_mem(memory);
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	if (mem->pages == 1 && mem->mem)
 		return mem->dma[0];
 	return ~0ULL;
@@ -63,6 +71,9 @@ nvkm_mem_addr(struct nvkm_memory *memory)
 static u64
 nvkm_mem_size(struct nvkm_memory *memory)
 {
+	struct nvkm_mem *mem = nvkm_mem(memory);
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	return nvkm_mem(memory)->pages << PAGE_SHIFT;
 }
 
@@ -76,6 +87,8 @@ nvkm_mem_map_dma(struct nvkm_memory *memory, u64 offset, struct nvkm_vmm *vmm,
 		.offset = offset,
 		.dma = mem->dma,
 	};
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	return nvkm_vmm_map(vmm, vma, argv, argc, &map);
 }
 
@@ -83,6 +96,8 @@ static void *
 nvkm_mem_dtor(struct nvkm_memory *memory)
 {
 	struct nvkm_mem *mem = nvkm_mem(memory);
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	if (mem->mem) {
 		while (mem->pages--) {
 			dma_unmap_page(mem->mmu->subdev.device->dev,
@@ -116,6 +131,8 @@ nvkm_mem_map_sgl(struct nvkm_memory *memory, u64 offset, struct nvkm_vmm *vmm,
 		.offset = offset,
 		.sgl = mem->sgl,
 	};
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	return nvkm_vmm_map(vmm, vma, argv, argc, &map);
 }
 
@@ -133,6 +150,8 @@ int
 nvkm_mem_map_host(struct nvkm_memory *memory, void **pmap)
 {
 	struct nvkm_mem *mem = nvkm_mem(memory);
+	struct nvkm_subdev *subdev = &mem->mmu->subdev;
+    nvkm_trace(subdev, "func %s", __func__);
 	if (mem->mem) {
 		*pmap = vmap(mem->mem, mem->pages, VM_MAP, PAGE_KERNEL);
 		return *pmap ? 0 : -EFAULT;
@@ -157,10 +176,16 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 
     nvkm_trace(subdev, "func %s", __func__);
 	if ( (mmu->type[type].type & NVKM_MEM_COHERENT) &&
-	    !(mmu->type[type].type & NVKM_MEM_UNCACHED))
+         !(mmu->type[type].type & NVKM_MEM_UNCACHED)) {
 		target = NVKM_MEM_TARGET_HOST;
-	else
+        nvkm_trace(subdev, "func %s: target %#x %s",
+                   __func__, target, "NVKM_MEM_TARGET_HOST");
+    }
+    else {
 		target = NVKM_MEM_TARGET_NCOH;
+        nvkm_trace(subdev, "func %s: target %#x %s",
+                   __func__, target, "NVKM_MEM_TARGET_NCOH");
+    }
 
 	if (page != PAGE_SHIFT)
 		return -EINVAL;
@@ -177,7 +202,8 @@ nvkm_mem_new_host(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 		if (args->v0.dma) {
 			nvkm_memory_ctor(&nvkm_mem_dma, &mem->memory);
 			mem->dma = args->v0.dma;
-			nvkm_debug(subdev, "dma addr 0x%llx\n", (u64)mem->dma);
+			nvkm_debug(subdev, "func %s: dma[0] %#llx\n",
+                       __func__, *mem->dma);
 		} else {
 			nvkm_memory_ctor(&nvkm_mem_sgl, &mem->memory);
 			nvkm_debug(subdev, "sgl \n");
@@ -235,11 +261,12 @@ nvkm_mem_new_type(struct nvkm_mmu *mmu, int type, u8 page, u64 size,
 	int ret;
 
 	if (mmu->type[type].type & NVKM_MEM_VRAM) {
-		nvkm_debug(subdev, "func %s type NVKM_MEM_VRAM\n", __func__);
+		nvkm_debug(subdev, "func %s: type NVKM_MEM_VRAM\n", __func__);
 		ret = mmu->func->mem.vram(mmu, type, page, size,
 					  argv, argc, &memory);
 	} else {
-		nvkm_debug(subdev, "func %s: type %#x\n", __func__, mmu->type[type].type);
+		nvkm_debug(subdev, "func %s: type %#x\n",
+                   __func__, mmu->type[type].type);
 		ret = nvkm_mem_new_host(mmu, type, page, size,
 					argv, argc, &memory);
 	}

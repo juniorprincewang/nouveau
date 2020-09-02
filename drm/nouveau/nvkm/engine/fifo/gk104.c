@@ -131,6 +131,7 @@ gk104_fifo_runlist_commit(struct gk104_fifo *fifo, int runl)
 	int nr = 0;
 	int target;
 
+	nvkm_trace(subdev, "func %s: ", __func__);
 	mutex_lock(&subdev->mutex);
 	mem = fifo->runlist[runl].mem[fifo->runlist[runl].next];
 	fifo->runlist[runl].next = !fifo->runlist[runl].next;
@@ -779,7 +780,8 @@ gk104_fifo_oneinit(struct nvkm_fifo *base)
 	/* Determine number of PBDMAs by checking valid enable bits. */
 	nvkm_wr32(device, 0x000204, 0xffffffff);
 	fifo->pbdma_nr = hweight32(nvkm_rd32(device, 0x000204));
-	nvkm_debug(subdev, "%d PBDMA(s)\n", fifo->pbdma_nr);
+	nvkm_debug(subdev, "func %s: %d PBDMA(s)\n",
+               __func__, fifo->pbdma_nr);
 
 	/* Read PBDMA->runlist(s) mapping from HW. */
 	if (!(map = kzalloc(sizeof(*map) * fifo->pbdma_nr, GFP_KERNEL)))
@@ -850,6 +852,9 @@ gk104_fifo_init(struct nvkm_fifo *base)
 	struct nvkm_device *device = fifo->base.engine.subdev.device;
 	int i;
 
+	struct nvkm_subdev *subdev = &fifo->base.engine.subdev;
+	nvkm_trace(subdev, "func %s: pbdma_nr %d",
+               __func__, fifo->pbdma_nr);
 	/* Enable PBDMAs. */
 	nvkm_wr32(device, 0x000204, (1 << fifo->pbdma_nr) - 1);
 

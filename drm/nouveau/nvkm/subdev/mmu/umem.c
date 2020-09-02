@@ -156,8 +156,8 @@ nvkm_umem_new(const struct nvkm_oclass *oclass, void *argv, u32 argc,
 		type = args->v0.type;
 		page = args->v0.page;
 		size = args->v0.size;
-		nvif_debug(oclass->parent, "func %s type %d page %d size 0x%llx\n",
-				__func__, type, page, size);
+		nvif_debug(oclass->parent, "func %s: type %d page %d size 0x%llx\n",
+                   __func__, type, page, size);
 	} else
 		return ret;
 
@@ -190,7 +190,7 @@ nvkm_umem_new(const struct nvkm_oclass *oclass, void *argv, u32 argc,
 	args->v0.page = nvkm_memory_page(umem->memory);
 	args->v0.addr = nvkm_memory_addr(umem->memory);
 	args->v0.size = nvkm_memory_size(umem->memory);
-	nvif_debug(oclass->parent, "func %s page %d addr 0x%llx size 0x%llx\n",
+	nvif_debug(oclass->parent, "func %s: page %d addr 0x%llx size 0x%llx\n",
 				__func__, args->v0.page, args->v0.addr, args->v0.size);
 	return 0;
 }

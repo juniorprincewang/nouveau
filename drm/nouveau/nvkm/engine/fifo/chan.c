@@ -46,7 +46,7 @@ nvkm_fifo_chan_child_fini(struct nvkm_oproxy *base, bool suspend)
 	const char *name = nvkm_subdev_name[engine->subdev.index];
 	int ret = 0;
 
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 	if (--engn->usecount)
 		return 0;
 
@@ -80,7 +80,7 @@ nvkm_fifo_chan_child_init(struct nvkm_oproxy *base)
 	const char *name = nvkm_subdev_name[engine->subdev.index];
 	int ret;
 
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 	if (engn->usecount++)
 		return 0;
 
@@ -111,7 +111,7 @@ nvkm_fifo_chan_child_del(struct nvkm_oproxy *base)
 	struct nvkm_engine *engine  = object->oproxy.base.engine;
 	struct nvkm_fifo_chan *chan = object->chan;
 	struct nvkm_fifo_engn *engn = &chan->engn[engine->subdev.index];
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 
 	if (chan->func->object_dtor)
 		chan->func->object_dtor(chan, object->hash);
@@ -141,7 +141,7 @@ nvkm_fifo_chan_child_new(const struct nvkm_oclass *oclass, void *data, u32 size,
 	struct nvkm_fifo_engn *engn = &chan->engn[engine->subdev.index];
 	struct nvkm_fifo_chan_object *object;
 	int ret = 0;
-	nvif_debug(&chan->object, "func %s oclass 0x%x engn->refcount %d\n", 
+	nvif_debug(&chan->object, "func %s oclass 0x%x engn->refcount %d\n",
 			__func__, oclass->base.oclass, engn->refcount);
 
 	if (!(object = kzalloc(sizeof(*object), GFP_KERNEL)))
@@ -253,7 +253,7 @@ nvkm_fifo_chan_ntfy(struct nvkm_object *object, u32 type,
 		    struct nvkm_event **pevent)
 {
 	struct nvkm_fifo_chan *chan = nvkm_fifo_chan(object);
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 	if (chan->func->ntfy)
 		return chan->func->ntfy(chan, type, pevent);
 	return -ENODEV;
@@ -267,8 +267,9 @@ nvkm_fifo_chan_map(struct nvkm_object *object, void *argv, u32 argc,
 	*type = NVKM_OBJECT_MAP_IO;
 	*addr = chan->addr;
 	*size = chan->size;
-	nvif_debug(&chan->object, "func %s:chan->addr %llx size %x \n",
-			__func__, chan->addr, chan->size); 
+    nvif_debug(&chan->object, "func %s: type NVKM_OBJECT_MAP_IO "
+               "handle(chan->addr) %#llx length(size) %#x\n",
+			__func__, chan->addr, chan->size);
 	return 0;
 }
 
@@ -276,6 +277,7 @@ static int
 nvkm_fifo_chan_rd32(struct nvkm_object *object, u64 addr, u32 *data)
 {
 	struct nvkm_fifo_chan *chan = nvkm_fifo_chan(object);
+	nvif_debug(&chan->object, "func %s\n", __func__);
 	if (unlikely(!chan->user)) {
 		chan->user = ioremap(chan->addr, chan->size);
 		if (!chan->user)
@@ -283,7 +285,6 @@ nvkm_fifo_chan_rd32(struct nvkm_object *object, u64 addr, u32 *data)
 	}
 	if (unlikely(addr + 4 > chan->size))
 		return -EINVAL;
-	nvif_debug(&chan->object, "func %s: chan->user %p\n", __func__, chan->user); 
 	*data = ioread32_native(chan->user + addr);
 	return 0;
 }
@@ -292,6 +293,7 @@ static int
 nvkm_fifo_chan_wr32(struct nvkm_object *object, u64 addr, u32 data)
 {
 	struct nvkm_fifo_chan *chan = nvkm_fifo_chan(object);
+	nvif_debug(&chan->object, "func %s\n", __func__);
 	if (unlikely(!chan->user)) {
 		chan->user = ioremap(chan->addr, chan->size);
 		if (!chan->user)
@@ -299,7 +301,6 @@ nvkm_fifo_chan_wr32(struct nvkm_object *object, u64 addr, u32 data)
 	}
 	if (unlikely(addr + 4 > chan->size))
 		return -EINVAL;
-	nvif_debug(&chan->object, "func %s: chan->user %p \n", __func__, chan->user); 
 	iowrite32_native(data, chan->user + addr);
 	return 0;
 }
@@ -308,7 +309,7 @@ static int
 nvkm_fifo_chan_fini(struct nvkm_object *object, bool suspend)
 {
 	struct nvkm_fifo_chan *chan = nvkm_fifo_chan(object);
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 	chan->func->fini(chan);
 	return 0;
 }
@@ -317,7 +318,7 @@ static int
 nvkm_fifo_chan_init(struct nvkm_object *object)
 {
 	struct nvkm_fifo_chan *chan = nvkm_fifo_chan(object);
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 	chan->func->init(chan);
 	return 0;
 }
@@ -329,7 +330,7 @@ nvkm_fifo_chan_dtor(struct nvkm_object *object)
 	struct nvkm_fifo *fifo = chan->fifo;
 	void *data = chan->func->dtor(chan);
 	unsigned long flags;
-	nvif_debug(&chan->object, "func %s \n", __func__); 
+	nvif_debug(&chan->object, "func %s \n", __func__);
 
 	spin_lock_irqsave(&fifo->lock, flags);
 	if (!list_empty(&chan->head)) {
@@ -376,6 +377,10 @@ nvkm_fifo_chan_ctor(const struct nvkm_fifo_chan_func *func,
 	unsigned long flags;
 	int ret;
 
+	struct nvkm_subdev *subdev = &fifo->engine.subdev;
+    nvkm_trace(subdev, "func %s: size %#x zero %d push %#llx engines %#llx "
+               "bar %d base %#x user %#x",
+               __func__, size, zero, push, engines, bar, base, user);
 	nvkm_object_ctor(&nvkm_fifo_chan_func, oclass, &chan->object);
 	chan->func = func;
 	chan->fifo = fifo;
@@ -430,6 +435,8 @@ nvkm_fifo_chan_ctor(const struct nvkm_fifo_chan_func *func,
 	chan->addr = device->func->resource_addr(device, bar) +
 		     base + user * chan->chid;
 	chan->size = user;
+    nvkm_trace(subdev, "func %s: chan addr %#llx chan size %#x",
+               __func__, chan->addr, chan->size);
 
 	nvkm_fifo_cevent(fifo);
 	return 0;

@@ -42,6 +42,9 @@ gk104_fifo_gpfifo_kick(struct gk104_fifo_chan *chan)
 	struct nvkm_client *client = chan->base.object.client;
 	int ret = 0;
 
+
+	nvkm_trace(subdev, "func %s: channel %d",
+               __func__, chan->base.chid);
 	mutex_lock(&subdev->mutex);
 	nvkm_wr32(device, 0x002634, chan->base.chid);
 	if (nvkm_msec(device, 2000,
@@ -60,6 +63,8 @@ gk104_fifo_gpfifo_kick(struct gk104_fifo_chan *chan)
 static u32
 gk104_fifo_gpfifo_engine_addr(struct nvkm_engine *engine)
 {
+	struct nvkm_subdev *subdev = &engine->subdev;
+	nvkm_trace(subdev, "func %s", __func__);
 	switch (engine->subdev.index) {
 	case NVKM_ENGINE_SW    :
 	case NVKM_ENGINE_CE0   :
@@ -115,6 +120,9 @@ gk104_fifo_gpfifo_engine_init(struct nvkm_fifo_chan *base,
 	struct gk104_fifo_chan *chan = gk104_fifo_chan(base);
 	struct nvkm_gpuobj *inst = chan->base.inst;
 	u32 offset = gk104_fifo_gpfifo_engine_addr(engine);
+	struct nvkm_subdev *subdev = &chan->fifo->base.engine.subdev;
+	nvkm_trace(subdev, "func %s: channel %d",
+               __func__, base->chid);
 
 	if (offset) {
 		u64   addr = chan->engn[engine->subdev.index].vma->addr;
@@ -151,6 +159,9 @@ gk104_fifo_gpfifo_engine_ctor(struct nvkm_fifo_chan *base,
 	int engn = engine->subdev.index;
 	int ret;
 
+	struct nvkm_subdev *subdev = &chan->fifo->base.engine.subdev;
+	nvkm_trace(subdev, "func %s: channel %d",
+               __func__, base->chid);
 	if (!gk104_fifo_gpfifo_engine_addr(engine))
 		return 0;
 
@@ -193,7 +204,10 @@ gk104_fifo_gpfifo_init(struct nvkm_fifo_chan *base)
 	struct nvkm_device *device = fifo->base.engine.subdev.device;
 	u32 addr = chan->base.inst->addr >> 12;
 	u32 coff = chan->base.chid * 8;
+	struct nvkm_subdev *subdev = &fifo->base.engine.subdev;
 
+	nvkm_trace(subdev, "func %s: channel %d chan->runl %#x",
+               __func__, chan->base.chid, chan->runl);
 	nvkm_mask(device, 0x800004 + coff, 0x000f0000, chan->runl << 16);
 	nvkm_wr32(device, 0x800000 + coff, 0x80000000 | addr);
 
@@ -240,10 +254,12 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 	u32 engines = 0, present = 0;
 	u64 subdevs = 0;
 	u64 usermem;
+	struct nvkm_subdev *subdev = &fifo->base.engine.subdev;
 
 	if (!vmm)
 		return -EINVAL;
 
+	nvkm_trace(subdev, "func %s", __func__);
 	/* Determine which downstream engines are present */
 	for (i = 0; i < fifo->engine_nr; i++) {
 		struct nvkm_engine *engine = fifo->engine[i].engine;
@@ -268,6 +284,8 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 		}
 	}
 
+	nvkm_trace(subdev, "func %s: engines %#x subdevs %#llx",
+               __func__, engines, subdevs);
 	/* Just an engine mask query?  All done here! */
 	if (!*engmask) {
 		*engmask = present;
@@ -286,6 +304,7 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 	*pobject = &chan->base.object;
 	chan->fifo = fifo;
 	chan->runl = runlist;
+	nvkm_trace(subdev, "func %s: runlist %d", __func__, runlist);
 	INIT_LIST_HEAD(&chan->head);
 
 	ret = nvkm_fifo_chan_ctor(&gk104_fifo_gpfifo_func, &fifo->base,
@@ -294,7 +313,8 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 				  oclass, &chan->base);
 	if (ret)
 		return ret;
-	nvif_ioctl(&chan->base.object, "subdevs 0x%llx enginemask 0x%x\n", subdevs, engines);
+	nvif_ioctl(&chan->base.object, "subdevs %#llx enginemask %#x\n",
+               subdevs, engines);
 
 	*chid = chan->base.chid;
 
@@ -307,7 +327,9 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 		nvkm_wo32(fifo->user.mem, usermem + i, 0x00000000);
 	nvkm_done(fifo->user.mem);
 	usermem = nvkm_memory_addr(fifo->user.mem) + usermem;
-
+	nvkm_trace(subdev, "func %s: usermem %#llx", __func__, usermem);
+	nvkm_trace(subdev, "func %s: ioffset %#llx ilength %#llx",
+               __func__, ioffset, ilength);
 	/* RAMFC */
 	nvkm_kmap(chan->base.inst);
 	nvkm_wo32(chan->base.inst, 0x08, lower_32_bits(usermem));
@@ -326,6 +348,8 @@ gk104_fifo_gpfifo_new_(const struct gk104_fifo_chan_func *func,
 	nvkm_wo32(chan->base.inst, 0xf8, 0x10003080); /* 0x002310 */
 	nvkm_wo32(chan->base.inst, 0xfc, 0x10000010); /* 0x002350 */
 	nvkm_done(chan->base.inst);
+
+	nvkm_trace(subdev, "func %s end", __func__);
 	return 0;
 }
 
@@ -361,7 +385,8 @@ gk104_fifo_gpfifo_new(struct nvkm_fifo *base, const struct nvkm_oclass *oclass,
 	int ret = -ENOSYS;
 //	WARN_ON(1);
 
-	nvif_ioctl(parent, "create channel gpfifo size %d\n", size);
+	nvif_ioctl(parent, "func %s: create channel gpfifo size %d\n",
+               __func__, size);
 	if (!(ret = nvif_unpack(ret, &data, &size, args->v0, 0, 0, false))) {
 		nvif_ioctl(parent, "create channel gpfifo vers %d vmm %llx "
 				   "ioffset %016llx ilength %08x engine %08x\n",
